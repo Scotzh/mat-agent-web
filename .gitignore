@@ -1,0 +1,14 @@
+.env
+.venv/
+.vscode/
+.python-version
+material_workflow.json
+others/
+mutiagent/
+custom_structures/
+cifs/
+calculation_output/
+__pycache__/
+matagent_project/
+matagent-material-ai/
+instance/

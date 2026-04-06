@@ -1,0 +1,359 @@
+{
+  "info": {
+    "eaf7ca1a-ee89-4cbb-9f64-ae330ae82bd5": {
+      "id": "eaf7ca1a-ee89-4cbb-9f64-ae330ae82bd5",
+      "reduced_formula": "LuAl2",
+      "full_formula": "Lu2 Al4",
+      "space_group_symbol": "Fd-3m",
+      "space_group_number": 227,
+      "num_sites": 6,
+      "is_ordered": true,
+      "density": 6.6296,
+      "html_file": "dc3ff28dc929473386f37461a62a9a69.html",
+      "lattice": {
+        "a": 5.4534,
+        "b": 5.4534,
+        "c": 5.4534,
+        "alpha": 60.0,
+        "beta": 60.0,
+        "gamma": 60.0,
+        "volume": 114.68
+      },
+      "sites": [
+        {
+          "element": "Lu",
+          "coords": [
+            0.875,
+            0.875,
+            0.875
+          ]
+        },
+        {
+          "element": "Lu",
+          "coords": [
+            0.125,
+            0.125,
+            0.125
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.5,
+            0.5,
+            0.0
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.0,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.5,
+            -0.0,
+            0.5
+          ]
+        }
+      ]
+    },
+    "bc6c21bc-437c-4f86-8c32-11a2e4e5dae7": {
+      "id": "bc6c21bc-437c-4f86-8c32-11a2e4e5dae7",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga2 N2",
+      "space_group_symbol": "P6_3mc",
+      "space_group_number": 186,
+      "num_sites": 4,
+      "is_ordered": true,
+      "density": 6.081,
+      "html_file": "c9c4c536851c43c2a52bc4686fba3c65.html",
+      "lattice": {
+        "a": 3.1889,
+        "b": 3.1889,
+        "c": 5.1924,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 120.0,
+        "volume": 45.73
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.4991
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.9991
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.8759
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.3759
+          ]
+        }
+      ]
+    },
+    "5024e1c1-d037-4314-bb58-5a835d7a3a2c": {
+      "id": "5024e1c1-d037-4314-bb58-5a835d7a3a2c",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga1 N1",
+      "space_group_symbol": "F-43m",
+      "space_group_number": 216,
+      "num_sites": 2,
+      "is_ordered": true,
+      "density": 6.0747,
+      "html_file": "ac7f7b1bff4f4f7a9c2fd067a5f08f44.html",
+      "lattice": {
+        "a": 3.1869,
+        "b": 3.1869,
+        "c": 3.1869,
+        "alpha": 60.0,
+        "beta": 60.0,
+        "gamma": 60.0,
+        "volume": 22.89
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.25,
+            0.25,
+            0.25
+          ]
+        }
+      ]
+    },
+    "6829528d-1bee-4d74-99d3-cb0e475a73db": {
+      "id": "6829528d-1bee-4d74-99d3-cb0e475a73db",
+      "reduced_formula": "GaBN2",
+      "full_formula": "Ga1 B1 N2",
+      "space_group_symbol": "P-4m2",
+      "space_group_number": 115,
+      "num_sites": 4,
+      "is_ordered": true,
+      "density": 5.2694,
+      "html_file": "21f4eefe5cd74f889d73bda2bc5a0fa9.html",
+      "lattice": {
+        "a": 2.8372,
+        "b": 2.8372,
+        "c": 4.2494,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 34.21
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "B",
+          "coords": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.5,
+            0.0,
+            0.8016
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.0,
+            0.5,
+            0.1984
+          ]
+        }
+      ]
+    },
+    "6dd93d0c-7d64-41eb-ad71-31ea689f2baf": {
+      "id": "6dd93d0c-7d64-41eb-ad71-31ea689f2baf",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga2 N2",
+      "space_group_symbol": "P6_3mc",
+      "space_group_number": 186,
+      "num_sites": 4,
+      "is_ordered": true,
+      "density": 6.081,
+      "html_file": "be2a6dc725f34445a3bda90e6816ba4f.html",
+      "lattice": {
+        "a": 3.1889,
+        "b": 3.1889,
+        "c": 5.1924,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 120.0,
+        "volume": 45.73
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.4991
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.9991
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.8759
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.3759
+          ]
+        }
+      ]
+    },
+    "7b713a41-7cf2-4d67-85db-4ac95919bfeb": {
+      "id": "7b713a41-7cf2-4d67-85db-4ac95919bfeb",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga1 N1",
+      "space_group_symbol": "F-43m",
+      "space_group_number": 216,
+      "num_sites": 2,
+      "is_ordered": true,
+      "density": 6.0747,
+      "html_file": "63016997da3b4fefa1d9669fd9df9a10.html",
+      "lattice": {
+        "a": 3.1869,
+        "b": 3.1869,
+        "c": 3.1869,
+        "alpha": 60.0,
+        "beta": 60.0,
+        "gamma": 60.0,
+        "volume": 22.89
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.0,
+            -0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.25,
+            0.25,
+            0.25
+          ]
+        }
+      ]
+    },
+    "30d07847-fc8e-4a2f-a6b5-053637a2a97a": {
+      "id": "30d07847-fc8e-4a2f-a6b5-053637a2a97a",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga1 N1",
+      "space_group_symbol": "Fm-3m",
+      "space_group_number": 225,
+      "num_sites": 2,
+      "is_ordered": true,
+      "density": 7.141,
+      "html_file": "60009ed7aef74c6b95dcf778977b00e6.html",
+      "lattice": {
+        "a": 3.0197,
+        "b": 3.0197,
+        "c": 3.0197,
+        "alpha": 60.0,
+        "beta": 60.0,
+        "gamma": 60.0,
+        "volume": 19.47
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.5,
+            0.5,
+            0.5
+          ]
+        }
+      ]
+    }
+  },
+  "queue": [
+    "eaf7ca1a-ee89-4cbb-9f64-ae330ae82bd5",
+    "bc6c21bc-437c-4f86-8c32-11a2e4e5dae7",
+    "5024e1c1-d037-4314-bb58-5a835d7a3a2c",
+    "6829528d-1bee-4d74-99d3-cb0e475a73db",
+    "6dd93d0c-7d64-41eb-ad71-31ea689f2baf",
+    "7b713a41-7cf2-4d67-85db-4ac95919bfeb",
+    "30d07847-fc8e-4a2f-a6b5-053637a2a97a"
+  ]
+}
