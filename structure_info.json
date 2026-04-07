@@ -1,97 +1,5 @@
 {
   "info": {
-    "bc6c21bc-437c-4f86-8c32-11a2e4e5dae7": {
-      "id": "bc6c21bc-437c-4f86-8c32-11a2e4e5dae7",
-      "reduced_formula": "GaN",
-      "full_formula": "Ga2 N2",
-      "space_group_symbol": "P6_3mc",
-      "space_group_number": 186,
-      "num_sites": 4,
-      "is_ordered": true,
-      "density": 6.081,
-      "html_file": "c9c4c536851c43c2a52bc4686fba3c65.html",
-      "lattice": {
-        "a": 3.1889,
-        "b": 3.1889,
-        "c": 5.1924,
-        "alpha": 90.0,
-        "beta": 90.0,
-        "gamma": 120.0,
-        "volume": 45.73
-      },
-      "sites": [
-        {
-          "element": "Ga",
-          "coords": [
-            0.6667,
-            0.3333,
-            0.4991
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.3333,
-            0.6667,
-            0.9991
-          ]
-        },
-        {
-          "element": "N",
-          "coords": [
-            0.6667,
-            0.3333,
-            0.8759
-          ]
-        },
-        {
-          "element": "N",
-          "coords": [
-            0.3333,
-            0.6667,
-            0.3759
-          ]
-        }
-      ]
-    },
-    "5024e1c1-d037-4314-bb58-5a835d7a3a2c": {
-      "id": "5024e1c1-d037-4314-bb58-5a835d7a3a2c",
-      "reduced_formula": "GaN",
-      "full_formula": "Ga1 N1",
-      "space_group_symbol": "F-43m",
-      "space_group_number": 216,
-      "num_sites": 2,
-      "is_ordered": true,
-      "density": 6.0747,
-      "html_file": "ac7f7b1bff4f4f7a9c2fd067a5f08f44.html",
-      "lattice": {
-        "a": 3.1869,
-        "b": 3.1869,
-        "c": 3.1869,
-        "alpha": 60.0,
-        "beta": 60.0,
-        "gamma": 60.0,
-        "volume": 22.89
-      },
-      "sites": [
-        {
-          "element": "Ga",
-          "coords": [
-            0.0,
-            -0.0,
-            0.0
-          ]
-        },
-        {
-          "element": "N",
-          "coords": [
-            0.25,
-            0.25,
-            0.25
-          ]
-        }
-      ]
-    },
     "6829528d-1bee-4d74-99d3-cb0e475a73db": {
       "id": "6829528d-1bee-4d74-99d3-cb0e475a73db",
       "reduced_formula": "GaBN2",
@@ -1099,11 +1007,117 @@
           ]
         }
       ]
+    },
+    "fcde7fa7-161f-4aaf-8164-420d6d9a55a2": {
+      "id": "fcde7fa7-161f-4aaf-8164-420d6d9a55a2",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga2 N2",
+      "space_group_symbol": "P6_3mc",
+      "space_group_number": 186,
+      "num_sites": 4,
+      "is_ordered": true,
+      "density": 6.081,
+      "html_file": "f96d0686e74343008868e4d7c37d1cbf.html",
+      "lattice": {
+        "a": 3.1889,
+        "b": 3.1889,
+        "c": 5.1924,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 120.0,
+        "volume": 45.73
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.4991
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.9991
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.8759
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.3759
+          ]
+        }
+      ]
+    },
+    "f35131e5-207b-469e-9610-7accf31f9020": {
+      "id": "f35131e5-207b-469e-9610-7accf31f9020",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga2 N2",
+      "space_group_symbol": "P6_3mc",
+      "space_group_number": 186,
+      "num_sites": 4,
+      "is_ordered": true,
+      "density": 6.081,
+      "html_file": "009015f1285f4cd9a490dc1e82a3ad6b.html",
+      "lattice": {
+        "a": 3.1889,
+        "b": 3.1889,
+        "c": 5.1924,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 120.0,
+        "volume": 45.73
+      },
+      "sites": [
+        {
+          "element": "Ga",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.4991
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.9991
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.8759
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.3759
+          ]
+        }
+      ]
     }
   },
   "queue": [
-    "bc6c21bc-437c-4f86-8c32-11a2e4e5dae7",
-    "5024e1c1-d037-4314-bb58-5a835d7a3a2c",
     "6829528d-1bee-4d74-99d3-cb0e475a73db",
     "6dd93d0c-7d64-41eb-ad71-31ea689f2baf",
     "7b713a41-7cf2-4d67-85db-4ac95919bfeb",
@@ -1111,6 +1125,8 @@
     "788ea4d6-b721-4c32-bc6f-830b93984977",
     "2b4793bf-73e5-4eba-82ed-268271540860",
     "a7ba54cd-3c1b-4387-9169-2a41a5bae674",
-    "1daeef6f-1966-4570-b833-a9f170513daf"
+    "1daeef6f-1966-4570-b833-a9f170513daf",
+    "fcde7fa7-161f-4aaf-8164-420d6d9a55a2",
+    "f35131e5-207b-469e-9610-7accf31f9020"
   ]
 }

@@ -485,19 +485,12 @@ def get_material_all_infomation_by_id(material_id: str) -> dict:
         with MPRester(API_KEY) as mpr:
             summary = mpr.summary.search(
                 material_ids=material_id,
-                fields=["material_id", "formula_pretty", "band_gap", "energy", "symmetry"]
             )
             if not summary:
                 return {"error": f"未找到材料 {material_id}"}
             
             s = summary[0]
-            return {
-                "material_id": s.material_id,
-                "formula_pretty": s.formula_pretty,
-                "band_gap": s.band_gap,
-                "energy": s.energy,
-                "symmetry": s.symmetry
-            }
+            return s
     except Exception as e:
         return {"error": str(e)}
 
@@ -586,12 +579,23 @@ def get_material_structure_from_oqmd(
         result["cif_path"] = cif_path
     
     if get_plot:
-        server = _get_file_server()
-        if server:
-            url = server.show_structure(structure, f"oqmd-{entry_id}.html")
-            result["3d_image_url"] = url
-        else:
-            result["3d_image_url_error"] = "文件服务器未启动"
+        try:
+            plot_result = get_structure_plot(structure)
+            if plot_result.get("Image"):
+                result["2d_image_url"] = plot_result["Image"]
+            
+            # 3D 结构
+            atoms = AseAtomsAdaptor.get_atoms(structure)
+            with tempfile.NamedTemporaryFile(suffix='.html', delete=False, mode='w') as tmp:
+                write(tmp.name, atoms, format='html')
+                tmp_path = tmp.name
+            
+            server = _get_file_server()
+            if server:
+                html_url = server.add_html_with_info(structure, tmp_path)
+                result["3d_html_url"] = html_url
+        except Exception as e:
+            result["plot_error"] = str(e)
     
     return result
 
