@@ -11,4 +11,6 @@ calculation_output/
 __pycache__/
 matagent_project/
 matagent-material-ai/
+temp_images/
+temp_3d/
 instance/
