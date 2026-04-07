@@ -172,11 +172,12 @@ def sidebar_functions():
 
         st.divider()
 
+        # 自动初始化 Agent（如果未初始化）
         if not st.session_state.langchain_connected:
-            if st.button("🔗 初始化 Agent", type="primary"):
-                with st.spinner("正在初始化..."):
-                    init_langchain_agent()
-        else:
+            with st.spinner("🚀 正在自动初始化 Agent..."):
+                init_langchain_agent()
+        
+        if st.session_state.langchain_connected:
             st.success("✅ Agent 已就绪")
 
             col1, col2 = st.columns(2)
