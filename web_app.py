@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import sys
 import uuid
+import time
 from datetime import datetime
 
 st.set_page_config(
@@ -130,28 +131,164 @@ st.markdown(
 )
 
 
-def init_langchain_agent():
+import requests
+
+# Agent 服务配置
+AGENT_SERVER_URL = "http://127.0.0.1:8765"
+
+def check_agent_server():
+    """检查 Agent 服务是否运行"""
     try:
-        from agent.langchain_agent import create_langchain_agent
-        from langchain_core.messages import HumanMessage, AIMessage
+        response = requests.get(f"{AGENT_SERVER_URL}/health", timeout=2)
+        return response.status_code == 200 and response.json().get("agent_ready")
+    except:
+        return False
+
+def init_langchain_agent():
+    """连接到 Agent 服务"""
+    try:
+        # 等待服务就绪
+        max_retries = 30
+        for i in range(max_retries):
+            if check_agent_server():
+                st.session_state.langchain_connected = True
+                return True
+            if i == 0:
+                st.info("⏳ 正在连接 Agent 服务...")
+            time.sleep(0.5)
         
-        agent = create_langchain_agent()
-        
-        # 同步历史消息到 Agent
-        if st.session_state.get("messages"):
-            for msg in st.session_state.messages:
-                if msg["role"] == "user":
-                    agent._message_history.append(HumanMessage(content=msg["content"]))
-                elif msg["role"] == "assistant":
-                    agent._message_history.append(AIMessage(content=msg["content"]))
-        
-        st.session_state.agent = agent
-        st.session_state.langchain_connected = True
-        return True
-    except Exception as e:
-        st.error(f"Agent 初始化失败: {e}")
+        st.error("❌ 无法连接到 Agent 服务，请确保已运行: python agent_server.py")
         st.session_state.langchain_connected = False
         return False
+    except Exception as e:
+        st.error(f"Agent 连接失败: {e}")
+        st.session_state.langchain_connected = False
+        return False
+
+def chat_with_agent(message: str, history: list = None) -> dict:
+    """通过 HTTP API 与 Agent 对话"""
+    try:
+        response = requests.post(
+            f"{AGENT_SERVER_URL}/chat",
+            json={
+                "session_id": st.session_state.session_id,
+                "message": message,
+                "history": history
+            },
+            timeout=120
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        return {"type": "error", "message": "Agent 服务未运行，请启动: python agent_server.py"}
+    except Exception as e:
+        return {"type": "error", "message": f"请求失败: {str(e)}"}
+
+def predict_bandgap_via_agent(formula: str) -> dict:
+    """通过 HTTP API 预测带隙"""
+    try:
+        response = requests.post(
+            f"{AGENT_SERVER_URL}/predict_bandgap",
+            params={"formula": formula},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ========== VASP HTTP 客户端函数 ==========
+
+def vasp_list_task_directories() -> dict:
+    """列出任务目录"""
+    try:
+        response = requests.get(f"{AGENT_SERVER_URL}/vasp/task_directories", timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def vasp_check_squeue() -> dict:
+    """检查 Slurm 队列"""
+    try:
+        response = requests.get(f"{AGENT_SERVER_URL}/vasp/squeue", timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def vasp_create_task(formula: str, cif_path: str) -> dict:
+    """创建任务目录"""
+    try:
+        response = requests.post(
+            f"{AGENT_SERVER_URL}/vasp/create_task",
+            params={"formula": formula, "cif_path": cif_path},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def vasp_create_mission(task_directory: str, mission_type: str) -> dict:
+    """生成任务输入文件"""
+    try:
+        response = requests.post(
+            f"{AGENT_SERVER_URL}/vasp/create_mission",
+            params={"task_directory": task_directory, "mission_type": mission_type},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def vasp_modify_incar(task_directory: str, mission: str, key: str, value: str) -> dict:
+    """修改 INCAR 参数"""
+    try:
+        response = requests.post(
+            f"{AGENT_SERVER_URL}/vasp/modify_incar",
+            params={"task_directory": task_directory, "mission": mission, "key": key, "value": value},
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def vasp_submit_mission(task_directory: str, mission: str) -> dict:
+    """提交任务"""
+    try:
+        response = requests.post(
+            f"{AGENT_SERVER_URL}/vasp/submit",
+            params={"task_directory": task_directory, "mission": mission},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def vasp_extract_result(task_directory: str, mission: str, plot: bool = False) -> dict:
+    """提取结果"""
+    try:
+        response = requests.post(
+            f"{AGENT_SERVER_URL}/vasp/extract",
+            params={"task_directory": task_directory, "mission": mission, "plot": plot},
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
 
 
 def sidebar_functions():
@@ -341,8 +478,14 @@ def chat_interface():
         
         with st.chat_message("assistant"):
             with st.spinner("AI 正在思考..."):
-                if st.session_state.agent:
-                    result = st.session_state.agent.chat(prompt)
+                if st.session_state.langchain_connected:
+                    # 准备历史消息
+                    history = [
+                        {"role": msg["role"], "content": msg["content"]}
+                        for msg in st.session_state.messages[:-1]  # 排除刚添加的用户消息
+                    ]
+                    
+                    result = chat_with_agent(prompt, history)
                     
                     # 立即显示工具调用
                     if result.get("type") == "tool_calls":
@@ -387,6 +530,12 @@ def chat_interface():
                         databasemanage.add_chat_message(
                             st.session_state.session_id, "assistant", final_msg, tool_results
                         )
+                    elif result.get("type") == "error":
+                        st.error(result.get("message", "请求失败"))
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": result.get("message", "请求失败")
+                        })
                     else:
                         msg = result.get("message", "")
                         st.markdown(msg)
@@ -399,7 +548,7 @@ def chat_interface():
                             st.session_state.session_id, "assistant", msg
                         )
                 else:
-                    st.error("请先点击「初始化 Agent」")
+                    st.error("❌ Agent 服务未连接")
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": "请先在左侧点击「初始化 Agent」",
@@ -638,13 +787,13 @@ def ml_prediction_panel():
 
             with st.spinner("预测中..."):
                 try:
-                    result = st.session_state.agent.predict_band_gap(formula)
+                    result = predict_bandgap_via_agent(formula)
                     if isinstance(result, dict):
                         if "error" in result:
                             st.error(result.get("error"))
                         else:
                             st.success("预测完成!")
-                            st.json(result)
+                            st.json(result.get("prediction", result))
                     else:
                         st.write(result)
                 except Exception as e:
@@ -666,11 +815,11 @@ def vasp_task_panel():
         st.markdown("**📁 历史任务目录**")
         if st.button("🔄 刷新任务列表", key="refresh_tasks"):
             if st.session_state.langchain_connected:
-                try:
-                    result = st.session_state.agent.list_task_directories()
+                result = vasp_list_task_directories()
+                if "error" in result:
+                    st.error(result.get("error"))
+                else:
                     st.session_state.task_dirs = result.get("task_directories", [])
-                except Exception as e:
-                    st.error(f"获取失败: {e}")
         
         if "task_dirs" in st.session_state:
             dirs = st.session_state.task_dirs
@@ -685,11 +834,11 @@ def vasp_task_panel():
         st.markdown("**📊 Slurm 任务队列**")
         if st.button("🔄 刷新队列", key="refresh_queue"):
             if st.session_state.langchain_connected:
-                try:
-                    result = st.session_state.agent.check_squeue()
+                result = vasp_check_squeue()
+                if "error" in result:
+                    st.error(result.get("error"))
+                else:
                     st.session_state.squeue = result.get("squeue", "")
-                except Exception as e:
-                    st.error(f"获取失败: {e}")
         
         if "squeue" in st.session_state:
             st.text(st.session_state.squeue or "无运行任务")
@@ -713,15 +862,12 @@ def vasp_task_panel():
                 st.warning("请填写所有字段")
             else:
                 with st.spinner("创建中..."):
-                    try:
-                        result = st.session_state.agent.create_task(formula, cif_local_path)
-                        if "error" in result:
-                            st.error(result.get("error"))
-                        else:
-                            st.success("任务创建成功!")
-                            st.json(result)
-                    except Exception as e:
-                        st.error(f"创建失败: {e}")
+                    result = vasp_create_task(formula, cif_local_path)
+                    if "error" in result:
+                        st.error(result.get("error"))
+                    else:
+                        st.success("任务创建成功!")
+                        st.json(result)
     
     # ========== Tab 4: 生成计算任务输入文件 ==========
     with tab4:
@@ -745,15 +891,12 @@ def vasp_task_panel():
                 st.warning("请选择任务目录")
             else:
                 with st.spinner("生成中..."):
-                    try:
-                        result = st.session_state.agent.create_mission(selected_dir, mission_type)
-                        if "error" in result:
-                            st.error(result.get("error"))
-                        else:
-                            st.success("输入文件生成成功!")
-                            st.json(result)
-                    except Exception as e:
-                        st.error(f"生成失败: {e}")
+                    result = vasp_create_mission(selected_dir, mission_type)
+                    if "error" in result:
+                        st.error(result.get("error"))
+                    else:
+                        st.success("输入文件生成成功!")
+                        st.json(result)
     
     # ========== Tab 5: 修改 INCAR ==========
     with tab5:
@@ -779,23 +922,18 @@ def vasp_task_panel():
             with col2:
                 if st.button("📖 加载 INCAR", key="load_incar"):
                     if st.session_state.langchain_connected:
-                        try:
-                            result = st.session_state.agent.modify_incar(
-                                selected_dir, mission_type, read=True
-                            )
-                            if "error" in result:
-                                st.error(result.get("error"))
-                                if result.get("hint"):
-                                    st.info(result.get("hint"))
-                            else:
-                                incar_dict = result.get("incar", {})
-                                rows = []
-                                for k, v in incar_dict.items():
-                                    if not k.startswith("@"):
-                                        rows.append({"参数": k, "值": str(v)})
-                                st.session_state.incar_rows = rows
-                        except Exception as e:
-                            st.error(f"读取失败: {e}")
+                        result = vasp_modify_incar(selected_dir, mission_type, "__read__", "")
+                        if "error" in result:
+                            st.error(result.get("error"))
+                            if result.get("hint"):
+                                st.info(result.get("hint"))
+                        else:
+                            incar_dict = result.get("incar", {})
+                            rows = []
+                            for k, v in incar_dict.items():
+                                if not k.startswith("@"):
+                                    rows.append({"参数": k, "值": str(v)})
+                            st.session_state.incar_rows = rows
             
             if "incar_rows" in st.session_state and st.session_state.incar_rows:
                 st.markdown("**📝 直接编辑参数（双击单元格修改）**")
@@ -811,20 +949,15 @@ def vasp_task_panel():
                 with col_btn1:
                     if st.button("💾 保存修改", key="save_incar", type="primary"):
                         if st.session_state.langchain_connected:
-                            try:
-                                write_str = ""
-                                for row in edited_df:
-                                    if row.get("参数") and row.get("值"):
-                                        write_str += f"{row['参数']} = {row['值']}\n"
-                                result = st.session_state.agent.modify_incar(
-                                    selected_dir, mission_type, read=False, write=write_str
-                                )
-                                if "error" in result:
-                                    st.error(result.get("error"))
-                                else:
-                                    st.success("INCAR 已保存!")
-                            except Exception as e:
-                                st.error(f"保存失败: {e}")
+                            write_str = ""
+                            for row in edited_df:
+                                if row.get("参数") and row.get("值"):
+                                    write_str += f"{row['参数']} = {row['值']}\n"
+                            result = vasp_modify_incar(selected_dir, mission_type, "__write__", write_str)
+                            if "error" in result:
+                                st.error(result.get("error"))
+                            else:
+                                st.success("INCAR 已保存!")
                 with col_btn2:
                     if st.button("🔄 重新加载", key="reload_incar"):
                         st.rerun()
@@ -861,15 +994,12 @@ def vasp_task_panel():
             if st.button("🚀 提交任务", key="submit_task", type="primary"):
                 if st.session_state.langchain_connected and submit_dir:
                     with st.spinner("提交中..."):
-                        try:
-                            result = st.session_state.agent.submit_mission(submit_dir, submit_mission)
-                            if "error" in result:
-                                st.error(result.get("error"))
-                            else:
-                                st.success("任务提交成功!")
-                                st.json(result)
-                        except Exception as e:
-                            st.error(f"提交失败: {e}")
+                        result = vasp_submit_mission(submit_dir, submit_mission)
+                        if "error" in result:
+                            st.error(result.get("error"))
+                        else:
+                            st.success("任务提交成功!")
+                            st.json(result)
         
         with col2:
             st.markdown("### 提取结果")
@@ -888,32 +1018,18 @@ def vasp_task_panel():
             if st.button("📥 提取结果", key="extract_result"):
                 if st.session_state.langchain_connected and extract_dir:
                     with st.spinner("提取中..."):
-                        try:
-                            result = st.session_state.agent.extract_result(extract_dir, extract_mission, plot_result)
-                            if "error" in result:
-                                st.error(result.get("error"))
-                            else:
-                                st.success("结果提取成功!")
-                                st.json(result)
-                                if result.get("image_url"):
-                                    st.image(result.get("image_url"))
-                        except Exception as e:
-                            st.error(f"提取失败: {e}")
+                        result = vasp_extract_result(extract_dir, extract_mission, plot_result)
+                        if "error" in result:
+                            st.error(result.get("error"))
+                        else:
+                            st.success("结果提取成功!")
+                            st.json(result)
+                            if result.get("image_url"):
+                                st.image(result.get("image_url"))
 
 
 def main():
     st.title("🔬 MatAgent 材料智能设计平台")
-
-    # 同步消息历史到 Agent
-    if st.session_state.get("agent") and st.session_state.get("messages"):
-        from langchain_core.messages import HumanMessage, AIMessage
-        if len(st.session_state.agent._message_history) != len(st.session_state.messages):
-            st.session_state.agent._message_history = []
-            for msg in st.session_state.messages:
-                if msg["role"] == "user":
-                    st.session_state.agent._message_history.append(HumanMessage(content=msg["content"]))
-                elif msg["role"] == "assistant":
-                    st.session_state.agent._message_history.append(AIMessage(content=msg["content"]))
 
     function_tabs = sidebar_functions()
 
