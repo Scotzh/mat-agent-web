@@ -345,6 +345,60 @@
           ]
         }
       ]
+    },
+    "788ea4d6-b721-4c32-bc6f-830b93984977": {
+      "id": "788ea4d6-b721-4c32-bc6f-830b93984977",
+      "reduced_formula": "TiIr",
+      "full_formula": "Ti2 Ir2",
+      "space_group_symbol": "P4/mmm",
+      "space_group_number": 123,
+      "num_sites": 4,
+      "is_ordered": true,
+      "density": 13.3623,
+      "html_file": "137c733ed4d241d69465f9473eb4a4e8.html",
+      "lattice": {
+        "a": 3.4808,
+        "b": 4.1404,
+        "c": 4.1404,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 59.67
+      },
+      "sites": [
+        {
+          "element": "Ti",
+          "coords": [
+            0.5,
+            0.5,
+            0.0
+          ]
+        },
+        {
+          "element": "Ti",
+          "coords": [
+            0.5,
+            0.0,
+            0.5
+          ]
+        },
+        {
+          "element": "Ir",
+          "coords": [
+            0.0,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Ir",
+          "coords": [
+            0.0,
+            0.0,
+            -0.0
+          ]
+        }
+      ]
     }
   },
   "queue": [
@@ -354,6 +408,7 @@
     "6829528d-1bee-4d74-99d3-cb0e475a73db",
     "6dd93d0c-7d64-41eb-ad71-31ea689f2baf",
     "7b713a41-7cf2-4d67-85db-4ac95919bfeb",
-    "30d07847-fc8e-4a2f-a6b5-053637a2a97a"
+    "30d07847-fc8e-4a2f-a6b5-053637a2a97a",
+    "788ea4d6-b721-4c32-bc6f-830b93984977"
   ]
 }

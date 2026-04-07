@@ -33,20 +33,33 @@ current_session_id = st.session_state.get("session_id")
 recent_sessions = databasemanage.list_sessions(limit=1)
 recent_session_id = recent_sessions[0]["session_id"] if recent_sessions else None
 
-# 如果没有session_id，或者当前会话和最近会话不同，或者消息为空
+# 辅助函数：加载历史消息（现在 tool_results 已存储在 content 字段中）
+def load_history_with_tools(session_id):
+    history = databasemanage.get_chat_history(session_id)
+    
+    messages = []
+    for h in history:
+        msg = {
+            "role": h["role"],
+            "content": h["content"],
+            "timestamp": h["timestamp"]
+        }
+        if h.get("tool_results"):
+            msg["tool_results"] = h["tool_results"]
+        messages.append(msg)
+    
+    return messages
+
+# 如果没有session_id，或者消息为空时从数据库加载
 if not current_session_id:
     if recent_session_id:
         st.session_state.session_id = recent_session_id
-        history = databasemanage.get_chat_history(recent_session_id)
-        if history:
-            st.session_state.messages = [{"role": h["role"], "content": h["content"]} for h in history]
+        st.session_state.messages = load_history_with_tools(recent_session_id)
     else:
         st.session_state.session_id = str(uuid.uuid4())
         st.session_state.messages = []
 elif not st.session_state.get("messages"):
-    # 消息为空时从数据库加载
-    history = databasemanage.get_chat_history(current_session_id)
-    st.session_state.messages = [{"role": h["role"], "content": h["content"]} for h in history]
+    st.session_state.messages = load_history_with_tools(current_session_id)
 
 # 页面加载时自动同步历史消息到 Agent
 if st.session_state.get("agent") and st.session_state.get("messages"):
@@ -172,8 +185,9 @@ def sidebar_functions():
                     # 先保存当前会话消息
                     if st.session_state.get("messages"):
                         for msg in st.session_state.messages:
+                            tool_results = msg.get("tool_results")
                             databasemanage.add_chat_message(
-                                st.session_state.session_id, msg["role"], msg["content"]
+                                st.session_state.session_id, msg["role"], msg["content"], tool_results
                             )
                     if st.session_state.agent:
                         st.session_state.agent._message_history = []
@@ -184,9 +198,12 @@ def sidebar_functions():
                     # 先保存当前会话消息
                     if st.session_state.get("messages"):
                         for msg in st.session_state.messages:
+                            tool_results = msg.get("tool_results")
                             databasemanage.add_chat_message(
-                                st.session_state.session_id, msg["role"], msg["content"]
+                                st.session_state.session_id, msg["role"], msg["content"], tool_results
                             )
+                    # 清除当前会话的工具调用记录
+                    databasemanage.clear_tool_calls(st.session_state.session_id)
                     # 清除当前会话消息
                     st.session_state.messages = []
                     # 生成新会话ID
@@ -206,32 +223,49 @@ def sidebar_functions():
         sessions = databasemanage.list_sessions(limit=10)
         if sessions:
             for s in sessions:
-                session_label = f"{s['session_id'][:8]}... | {s['last_time']}"
-                if st.button(session_label, key=f"session_{s['session_id']}"):
-                    # 保存当前会话消息到数据库
-                    if st.session_state.get("messages"):
-                        for msg in st.session_state.messages:
-                            databasemanage.add_chat_message(
-                                st.session_state.session_id, msg["role"], msg["content"]
-                            )
-                    # 切换到该会话
-                    st.session_state.session_id = s["session_id"]
-                    history = databasemanage.get_chat_history(s["session_id"])
-                    st.session_state.messages = [{"role": h["role"], "content": h["content"]} for h in history]
-                    
-                    # 立即显示消息（不等待rerun）
-                    st.session_state.show_history_immediately = True
-                    
-                    # 更新 Agent 的消息历史
-                    if st.session_state.agent:
-                        st.session_state.agent._message_history = []
-                        from langchain_core.messages import HumanMessage, AIMessage
-                        for h in history:
-                            if h["role"] == "user":
-                                st.session_state.agent._message_history.append(HumanMessage(content=h["content"]))
-                            elif h["role"] == "assistant":
-                                st.session_state.agent._message_history.append(AIMessage(content=h["content"]))
-                    st.rerun()
+                # 显示会话名称或ID
+                display_name = s.get("session_name") or f"会话 {s['session_id'][:8]}"
+                session_label = f"{display_name} | {s['last_time']}"
+                
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    if st.button(session_label, key=f"session_{s['session_id']}"):
+                        # 切换到该会话
+                        st.session_state.session_id = s["session_id"]
+                        st.session_state.messages = load_history_with_tools(s["session_id"])
+                        
+                        # 更新 Agent 的消息历史
+                        if st.session_state.agent:
+                            st.session_state.agent._message_history = []
+                            from langchain_core.messages import HumanMessage, AIMessage
+                            for msg in st.session_state.messages:
+                                if msg["role"] == "user":
+                                    st.session_state.agent._message_history.append(HumanMessage(content=msg["content"]))
+                                elif msg["role"] == "assistant":
+                                    st.session_state.agent._message_history.append(AIMessage(content=msg["content"]))
+                        st.rerun()
+                with col2:
+                    if st.button("🗑️", key=f"delete_{s['session_id']}"):
+                        databasemanage.delete_session(s["session_id"])
+                        # 如果删除的是当前会话，清空消息
+                        if st.session_state.get("session_id") == s["session_id"]:
+                            st.session_state.messages = []
+                            st.session_state.session_id = str(uuid.uuid4())
+                        st.rerun()
+            
+            # 重命名当前会话
+            if st.session_state.get("session_id"):
+                current_name = databasemanage.get_session_name(st.session_state.session_id)
+                new_name = st.text_input(
+                    "重命名当前会话",
+                    value=current_name or "",
+                    placeholder="输入会话名称",
+                    key="session_name_input"
+                )
+                if new_name and new_name != current_name:
+                    if st.button("保存名称"):
+                        databasemanage.update_session_name(st.session_state.session_id, new_name)
+                        st.rerun()
         else:
             st.info("暂无历史会话")
 
@@ -292,7 +326,7 @@ def chat_interface():
         
         # 保存用户消息到数据库
         databasemanage.add_chat_message(
-            st.session_state.session_id, "user", prompt
+            st.session_state.session_id, "user", prompt, None
         )
         
         # 在 assistant 消息位置显示
@@ -346,9 +380,9 @@ def chat_interface():
                             "content": final_msg,
                             "tool_results": tool_results
                         })
-                        # 保存助手回复到数据库
+                        # 保存助手回复到数据库（包含工具调用）
                         databasemanage.add_chat_message(
-                            st.session_state.session_id, "assistant", final_msg
+                            st.session_state.session_id, "assistant", final_msg, tool_results
                         )
                     else:
                         msg = result.get("message", "")
@@ -370,10 +404,10 @@ def chat_interface():
                     
                     # 保存到数据库
                     databasemanage.add_chat_message(
-                        st.session_state.session_id, "user", prompt
+                        st.session_state.session_id, "user", prompt, None
                     )
                     databasemanage.add_chat_message(
-                        st.session_state.session_id, "assistant", "请先在左侧点击「初始化 Agent」"
+                        st.session_state.session_id, "assistant", "请先在左侧点击「初始化 Agent」", None
                     )
 
     if prompt := st.chat_input("描述您的材料科学需求..."):
