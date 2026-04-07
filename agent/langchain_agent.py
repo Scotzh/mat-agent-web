@@ -4,83 +4,103 @@
 使用 ToolNode 和 tools_condition 处理工具调用。
 """
 
+# ============================================================
+# 标准库导入
+# ============================================================
 import os
 import json
 import io
 import time
-from typing import Optional, List, Dict, Any, Tuple, TypedDict, Annotated
+import tempfile
+from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime
 from operator import add
 
+# ============================================================
+# 第三方库导入
+# ============================================================
+import matplotlib.pyplot as plt
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, SystemMessage
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, END, START
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.graph import MessagesState
-import matplotlib.pyplot as plt
 
+from pymatgen.core import Structure, Lattice
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.io.cif import CifWriter
+from pymatgen.io.ase import AseAtomsAdaptor
+
+from ase.visualize.plot import plot_atoms
+from ase.io import write
+
+# ============================================================
+# 项目模块导入
+# ============================================================
 import loadenv
 import databasemanage
 import tryssh
 import myml.bandgap_predict as bandgap_predict
 from myml.bandgap_predict import predict_bandgap
-from pymatgen.core import Structure, Lattice
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.io.cif import CifWriter
-from pymatgen.io.ase import AseAtomsAdaptor
 import flask_server
 from flask_server import MatFileServer
-from ase.visualize.plot import plot_atoms
-import tempfile
-from ase.io import write
 
+# ============================================================
+# 配置初始化
+# ============================================================
 config = loadenv.Config()
 if not config.validate_config():
     raise EnvironmentError("请设置必要的环境变量")
 
+# ============================================================
+# 常量定义
+# ============================================================
+SERVER_PORT = 6750
+PROJECT_FILE = "material_workflow.json"
 
 # ============================================================
-# LangGraph 状态定义 (使用 MessagesState)
+# 文件服务器管理
 # ============================================================
-
-class AgentState(MessagesState):
-    """Agent 状态，包含消息历史"""
-    pass
-
-
-# ============================================================
-# 工具函数定义 (与 mpmcp.py 对应)
-# ============================================================
-
 _file_server = None
 _file_server_started = False
+
 
 def _get_file_server():
     """获取统一文件服务器"""
     global _file_server, _file_server_started
     if _file_server is None and not _file_server_started:
         try:
-            _file_server = MatFileServer(port=6750)
+            _file_server = MatFileServer(port=SERVER_PORT)
             _file_server_started = True
         except Exception as e:
             print(f"启动文件服务器失败: {e}")
     return _file_server
+
+
+def _get_server_url():
+    """获取文件服务器地址"""
+    return f"http://localhost:{SERVER_PORT}"
+
 
 # 预启动服务
 try:
     _get_file_server()
 except:
     pass
+
+
+# ============================================================
+# LangGraph 状态定义
+# ============================================================
+class AgentState(MessagesState):
+    """Agent 状态，包含消息历史"""
     pass
 
 
-_server_port = 6750
-
-def _get_server_url():
-    """获取文件服务器地址"""
-    return f"http://localhost:{_server_port}"
-
+# ============================================================
+# 可视化辅助函数
+# ============================================================
 def get_structure_plot(structure: Structure, rotation: str = '10x,10y,0z') -> dict:
     """生成 2D 结构图，返回图片 URL"""
     try:
@@ -111,6 +131,9 @@ def get_structure_plot(structure: Structure, rotation: str = '10x,10y,0z') -> di
         
         # 保存到文件服务器的图片目录
         server = _get_file_server()
+        if server is None:
+            return {"Image": None, "error": "文件服务器未启动"}
+        
         img_buffer = io.BytesIO()
         plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
         plt.close()
@@ -121,10 +144,157 @@ def get_structure_plot(structure: Structure, rotation: str = '10x,10y,0z') -> di
         return {"Image": image_url, "error": None}
     except Exception as e:
         return {"Image": None, "error": str(e)}
+
+
+def _plot_vasp_band(xml_path: str, kpoints_path: str) -> dict:
+    """使用 Pymatgen 绘制能带图，返回图片URL"""
+    try:
+        from pymatgen.io.vasp import Vasprun
+        from pymatgen.electronic_structure.plotter import BSPlotter
+        
+        # 加载数据
+        run = Vasprun(xml_path, parse_projected_eigen=False)
+        bs = run.get_band_structure(kpoints_filename=kpoints_path, line_mode=True)
+        
+        # 提取物理量
+        is_metal = bs.is_metal()
+        gap_info = bs.get_band_gap()
+        results = {
+            "is_metal": is_metal,
+            "gap": gap_info['energy'],
+            "fermi_energy": bs.efermi,
+        }
+        
+        # 绘制能带图
+        plotter = BSPlotter(bs)
+        plt_module = plotter.get_plot()
+        fig = plt.gcf()
+        ax = plt.gca()
+        
+        # 美化标签
+        xticks = ax.get_xticks()
+        labels = [label.get_text() for label in ax.get_xticklabels()]
+        fixed_labels = [l.replace('GAMMA', r'$\Gamma$') for l in labels]
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(fixed_labels, fontsize=20)
+        ax.set_ylabel(r'$E - E_f$ (eV)', fontsize=20)
+        ax.set_title('Band Structure', fontsize=22, pad=20)
+        ax.axhline(y=0, color='#d62728', linestyle='--', linewidth=2, zorder=1)
+        
+        # 保存到内存
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        
+        # 上传到文件服务器
+        server = _get_file_server()
+        if server:
+            image_url = server.add_image(buf)
+            return {"Image": image_url, "data": results, "error": None}
+        return {"Image": None, "data": results, "error": "文件服务器未启动"}
+        
+    except Exception as e:
+        return {"Image": None, "data": None, "error": str(e)}
+
+
+def _plot_vasp_dos(vasprun_path: str) -> dict:
+    """绘制DOS图，返回图片URL"""
+    try:
+        from pymatgen.io.vasp import Vasprun
+        
+        # 解析数据
+        vr = Vasprun(vasprun_path, parse_dos=True)
+        complete_dos = vr.complete_dos
+        
+        if complete_dos is None:
+            return {"Image": None, "error": "无法从vasprun提取CompleteDos"}
+        
+        energies = complete_dos.energies - complete_dos.efermi
+        tdos_array = list(complete_dos.densities.values())[0]
+        element_dos = complete_dos.get_element_dos()
+        
+        # 创建图形
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        fig.suptitle('Density of States Analysis', fontweight='bold')
+        
+        # (A) Total DOS
+        ax = axes[0, 0]
+        ax.plot(energies, tdos_array, color='black', lw=1.5, label='Total DOS')
+        ax.fill_between(energies, 0, tdos_array, where=(energies < 0), color='gray', alpha=0.2)
+        ax.axvline(x=0, color='#D55E00', linestyle='--', lw=1, label='$E_F$')
+        ax.set_title('Total DOS')
+        ax.set_ylabel('DOS (states/eV)')
+        ax.legend(frameon=False)
+        ax.grid(True, alpha=0.3)
+        
+        # (B) Element Projected DOS
+        ax = axes[0, 1]
+        if element_dos:
+            for el, dos_obj in element_dos.items():
+                dens = list(dos_obj.densities.values())[0]
+                ax.plot(energies, dens, label=str(el), lw=1.3)
+            ax.axvline(x=0, color='#D55E00', linestyle='--', lw=1)
+            ax.set_title('Element Projected DOS')
+            ax.legend(frameon=False, fontsize=9)
+        ax.grid(True, alpha=0.3)
+        
+        # (C) Near-Fermi Region
+        ax = axes[1, 0]
+        fermi_mask = (energies > -5) & (energies < 5)
+        ax.plot(energies[fermi_mask], tdos_array[fermi_mask], color='black', lw=1.5)
+        ax.axvline(x=0, color='#D55E00', linestyle='--', lw=1.5, label='$E_F$')
+        ax.set_title('Near-Fermi Region (-5 to 5 eV)')
+        ax.set_xlabel('Energy (eV)')
+        ax.set_ylabel('DOS')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        # (D) DOS Analysis Info
+        ax = axes[1, 1]
+        ax.axis('off')
+        info_text = f"""
+        DOS Analysis Summary:
+        
+        Fermi Energy: {complete_dos.efermi:.3f} eV
+        Energy Range: [{energies.min():.2f}, {energies.max():.2f}] eV
+        Elements: {', '.join([str(el) for el in element_dos.keys()]) if element_dos else 'N/A'}
+        """
+        ax.text(0.1, 0.5, info_text, transform=ax.transAxes, fontsize=10,
+                verticalalignment='center', fontfamily='monospace')
+        
+        plt.tight_layout()
+        
+        # 保存到内存
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        
+        # 上传到文件服务器
+        server = _get_file_server()
+        if server:
+            image_url = server.add_image(buf)
+            return {"Image": image_url, "error": None}
+        return {"Image": None, "error": "文件服务器未启动"}
+        
     except Exception as e:
         return {"Image": None, "error": str(e)}
 
 
+# ============================================================
+# VASP 连接辅助函数
+# ============================================================
+def _get_vasp_connection():
+    """获取VASP远程连接"""
+    host = config.get_host()
+    port = config.get_port()
+    username = config.get_username()
+    password = config.get_password()
+    return tryssh.VaspTaskInitializer(host, username, password, port)
+
+
+# ============================================================
+# 基础工具函数
+# ============================================================
 @tool
 def get_time() -> str:
     """获取当前系统时间"""
@@ -133,116 +303,26 @@ def get_time() -> str:
 
 
 @tool
+def read_file(file_path: str) -> dict:
+    """读取本地文件"""
+    try:
+        with open(file_path, "r") as f:
+            content = f.read()
+        return {"content": content, "file_path": file_path}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ============================================================
+# Materials Project 工具
+# ============================================================
+@tool
 def get_material_project_page(material_id: str) -> dict:
     """获取指定材料的Material Project页面链接"""
     if not material_id:
         return {"error": "材料ID不能为空"}
     url = f"https://next-gen.materialsproject.org/materials/{material_id}/"
     return {"material_id": material_id, "url": url, "message": "获取成功"}
-
-
-@tool
-def search_materials_from_oqmd(
-    elements: Optional[List[str]] = None,
-    band_gap_min: Optional[float] = None,
-    band_gap_max: Optional[float] = None,
-    stability_max: float = 0.1,
-    limit: int = 20
-) -> List[dict]:
-    """在OQMD数据库搜索材料
-    
-    Args:
-        elements: 元素列表，如 ["Fe", "O"]
-        band_gap_min: 最小带隙(eV)
-        band_gap_max: 最大带隙(eV)
-        stability_max: 最大凸包距离，默认0.1
-        limit: 返回数量，默认20
-    """
-    import oqmd
-    
-    filter_parts = []
-    if elements:
-        if len(elements) == 1:
-            filter_parts.append(f"element={elements[0]}")
-        else:
-            filter_parts.append(f"element_set={','.join(elements)}")
-    if band_gap_min is not None:
-        filter_parts.append(f"band_gap>={band_gap_min}")
-    if band_gap_max is not None:
-        filter_parts.append(f"band_gap<={band_gap_max}")
-    if stability_max is not None:
-        filter_parts.append(f"stability<={stability_max}")
-    
-    filter_expr = " AND ".join(filter_parts) if filter_parts else None
-    
-    return oqmd.search_oqmd(
-        fields=["name", "entry_id", "band_gap", "delta_e", "stability", "spacegroup"],
-        filter_expr=filter_expr,
-        limit=limit,
-        sort_by="stability"
-    )
-
-
-@tool
-def get_material_structure_from_oqmd(
-    entry_id: int,
-    mode: str = "conventional",
-    get_sites: bool = False,
-    get_plot: bool = False,
-    download: bool = False
-) -> dict:
-    """在OQMD数据库获取指定材料的结构
-    
-    Args:
-        entry_id: OQMD材料条目ID
-        mode: 下载模式，"conventional"或"primitive"
-        get_sites: 是否获取原子位点信息
-        get_plot: 是否生成结构图
-        download: 是否下载CIF文件
-    """
-    import oqmd
-    
-    res = oqmd.parse_poscar_with_pymatgen(entry_id, mode)
-    if not res["success"]:
-        return {"error": res["error"]}
-    
-    structure = res["structure"]
-    lattice = structure.lattice
-    space_group_info = structure.get_space_group_info()
-    
-    result = {
-        "formula": structure.formula,
-        "space_group_symbol": space_group_info[0],
-        "space_group_number": space_group_info[1],
-        "lattice_parameters": {
-            "a": round(lattice.a, 4),
-            "b": round(lattice.b, 4),
-            "c": round(lattice.c, 4),
-            "alpha": round(lattice.alpha, 2),
-            "beta": round(lattice.beta, 2),
-            "gamma": round(lattice.gamma, 2)
-        },
-        "number_of_sites": len(structure)
-    }
-    
-    if get_sites:
-        result["sites"] = [{
-            "element": site.species_string,
-            "fractional_coordinates": [round(c, 4) for c in site.frac_coords]
-        } for site in structure.sites]
-    
-    if download:
-        os.makedirs("cifs", exist_ok=True)
-        cif_path = f"cifs/{structure.formula.replace(' ', '_')}-oqmd-{entry_id}.cif"
-        CifWriter(structure).write_file(cif_path)
-        result["cif_path"] = cif_path
-    
-    if get_plot:
-        server = _get_file_server()
-        url = server.show_structure(structure, f"oqmd-{entry_id}.html")
-        result["3d_image_url"] = url
-    
-    return result
 
 
 @tool
@@ -255,17 +335,7 @@ def search_materials_from_mp(
     formula: Optional[str] = None,
     chunk_size: int = 25
 ) -> List[dict]:
-    """从Materials Project数据库搜索材料
-    
-    Args:
-        elements: 元素符号列表
-        exclude_elements: 排除的元素
-        chemsys: 化学系统
-        band_gap: 带隙范围
-        num_elements: 元素个数范围
-        formula: 化学式
-        chunk_size: 返回数量，默认25
-    """
+    """从Materials Project数据库搜索材料"""
     from mp_api.client import MPRester
     
     API_KEY = config.get_api_key()
@@ -378,10 +448,6 @@ def get_material_structure_from_mp(
                 result["cif_path"] = cif_path
             
             if get_plot:
-                import tempfile
-                from ase.io import write
-                from pymatgen.io.ase import AseAtomsAdaptor
-                
                 formula = structure.composition.reduced_formula
                 atoms = AseAtomsAdaptor.get_atoms(structure)
                 
@@ -390,7 +456,7 @@ def get_material_structure_from_mp(
                     write(tmp.name, atoms, format='html')
                     tmp_path = tmp.name
                 
-                # 通过文件服务器保存并返回 URL（带结构信息）
+                # 通过文件服务器保存并返回 URL
                 server = _get_file_server()
                 html_url = server.add_html_with_info(structure, tmp_path)
                 
@@ -436,6 +502,103 @@ def get_material_all_infomation_by_id(material_id: str) -> dict:
         return {"error": str(e)}
 
 
+# ============================================================
+# OQMD 工具
+# ============================================================
+@tool
+def search_materials_from_oqmd(
+    elements: Optional[List[str]] = None,
+    band_gap_min: Optional[float] = None,
+    band_gap_max: Optional[float] = None,
+    stability_max: float = 0.1,
+    limit: int = 20
+) -> List[dict]:
+    """在OQMD数据库搜索材料"""
+    import oqmd
+    
+    filter_parts = []
+    if elements:
+        if len(elements) == 1:
+            filter_parts.append(f"element={elements[0]}")
+        else:
+            filter_parts.append(f"element_set={','.join(elements)}")
+    if band_gap_min is not None:
+        filter_parts.append(f"band_gap>={band_gap_min}")
+    if band_gap_max is not None:
+        filter_parts.append(f"band_gap<={band_gap_max}")
+    if stability_max is not None:
+        filter_parts.append(f"stability<={stability_max}")
+    
+    filter_expr = " AND ".join(filter_parts) if filter_parts else None
+    
+    return oqmd.search_oqmd(
+        fields=["name", "entry_id", "band_gap", "delta_e", "stability", "spacegroup"],
+        filter_expr=filter_expr,
+        limit=limit,
+        sort_by="stability"
+    )
+
+
+@tool
+def get_material_structure_from_oqmd(
+    entry_id: int,
+    mode: str = "conventional",
+    get_sites: bool = False,
+    get_plot: bool = False,
+    download: bool = False
+) -> dict:
+    """在OQMD数据库获取指定材料的结构"""
+    import oqmd
+    
+    res = oqmd.parse_poscar_with_pymatgen(entry_id, mode)
+    if not res["success"]:
+        return {"error": res["error"]}
+    
+    structure = res["structure"]
+    lattice = structure.lattice
+    space_group_info = structure.get_space_group_info()
+    
+    result = {
+        "formula": structure.formula,
+        "space_group_symbol": space_group_info[0],
+        "space_group_number": space_group_info[1],
+        "lattice_parameters": {
+            "a": round(lattice.a, 4),
+            "b": round(lattice.b, 4),
+            "c": round(lattice.c, 4),
+            "alpha": round(lattice.alpha, 2),
+            "beta": round(lattice.beta, 2),
+            "gamma": round(lattice.gamma, 2)
+        },
+        "number_of_sites": len(structure)
+    }
+    
+    if get_sites:
+        result["sites"] = [{
+            "element": site.species_string,
+            "fractional_coordinates": [round(c, 4) for c in site.frac_coords]
+        } for site in structure.sites]
+    
+    if download:
+        os.makedirs("cifs", exist_ok=True)
+        cif_path = f"cifs/{structure.formula.replace(' ', '_')}-oqmd-{entry_id}.cif"
+        CifWriter(structure).write_file(cif_path)
+        result["cif_path"] = cif_path
+    
+    if get_plot:
+        server = _get_file_server()
+        if server:
+            url = server.show_structure(structure, f"oqmd-{entry_id}.html")
+            result["3d_image_url"] = url
+        else:
+            result["3d_image_url_error"] = "文件服务器未启动"
+    
+    return result
+
+
+# ============================================================
+# 结构构建工具
+# ============================================================
 @tool
 def build_structure(
     a: float, b: float, c: float,
@@ -445,16 +608,7 @@ def build_structure(
     scaling_matrix: Optional[int] = None,
     save_to_cif: bool = False
 ) -> dict:
-    """根据晶格参数和坐标构建晶体结构
-    
-    Args:
-        a, b, c: 晶格参数(埃)
-        alpha, beta, gamma: 晶格角(度)
-        elements: 元素符号列表
-        frac_coord: 分数坐标
-        scaling_matrix: 超胞扩展因子
-        save_to_cif: 是否保存CIF文件
-    """
+    """根据晶格参数和坐标构建晶体结构"""
     lattice = Lattice.from_parameters(a, b, c, alpha, beta, gamma)
     structure = Structure(lattice, elements, frac_coord)
     
@@ -483,6 +637,9 @@ def build_structure(
     return result
 
 
+# ============================================================
+# ML 预测工具
+# ============================================================
 @tool
 def predict_band_gap(formula: str) -> dict:
     """使用XGBoost模型预测材料的带隙"""
@@ -496,15 +653,6 @@ def predict_band_gap(formula: str) -> dict:
 # ============================================================
 # VASP 远程计算工具
 # ============================================================
-
-def _get_vasp_connection():
-    host = config.get_host()
-    port = config.get_port()
-    username = config.get_username()
-    password = config.get_password()
-    return tryssh.VaspTaskInitializer(host, username, password, port)
-
-
 @tool
 def create_task(formula: str, cif_path: str) -> dict:
     """在远程服务器创建任务目录并上传CIF"""
@@ -546,10 +694,7 @@ def check_squeue() -> str:
 
 @tool
 def execute_command(command: str) -> dict:
-    """在计算服务器上执行linux命令
-    
-    注意：这是计算服务器，不是MCP服务器
-    """
+    """在计算服务器上执行linux命令"""
     try:
         with _get_vasp_connection() as vasp_task:
             result = vasp_task.execute_command(command)
@@ -561,42 +706,49 @@ def execute_command(command: str) -> dict:
 @tool
 def extract_file(file_path: str) -> dict:
     """从计算服务器提取文件，返回下载URL"""
+    print(f"\n🔧 [{datetime.now().strftime('%H:%M:%S')}] 调用工具: extract_file")
+    print(f"   参数: file_path='{file_path}'")
     try:
         with _get_vasp_connection() as vasp_task:
             result = vasp_task.extract_file(file_path)
+            print(f"   结果: {result.get('status', 'unknown')}")
             return result
     except Exception as e:
+        print(f"   错误: {e}")
         return {"error": str(e)}
 
 
 @tool
 def create_mission(task_directory: str, mission: str) -> dict:
-    """创建计算任务的输入文件，但不提交计算
-    
-    Args:
-        task_directory: 任务目录路径
-        mission: 计算类型，可选: 'relax', 'scf', 'band', 'dos'
-    """
+    """创建计算任务的输入文件，但不提交计算"""
+    print(f"\n🔧 [{datetime.now().strftime('%H:%M:%S')}] 调用工具: create_mission")
+    print(f"   参数: task_directory='{task_directory}', mission='{mission}'")
     try:
         with _get_vasp_connection() as vasp_task:
-            vasp_task.create_mission(task_directory, mission)
-            return {"message": f"已创建 {mission} 任务输入文件", "task_directory": task_directory}
+            result = vasp_task.create_mission(task_directory, mission)
+            if isinstance(result, dict) and result.get("status") == "error":
+                print(f"   错误: {result.get('message', '创建任务失败')}")
+                return {"error": result.get("message", "创建任务失败")}
+            print(f"   结果: 成功创建 {mission} 任务输入文件")
+            return {"message": f"已创建 {mission} 任务输入文件", "task_directory": task_directory, "result": result}
     except Exception as e:
+        print(f"   错误: {e}")
         return {"error": str(e)}
 
 
 @tool
 def submit_mission(task_directory: str, mission: str) -> dict:
-    """提交计算任务
-    
-    Args:
-        task_directory: 任务目录路径
-        mission: 计算类型，可选: 'relax', 'scf', 'band', 'dos'
-    """
+    """提交计算任务"""
+    print(f"\n🔧 [{datetime.now().strftime('%H:%M:%S')}] 调用工具: submit_mission")
+    print(f"   参数: task_directory='{task_directory}', mission='{mission}'")
     try:
         with _get_vasp_connection() as vasp_task:
-            vasp_task.submit_mission(task_directory, mission)
-            return {"message": f"已提交 {mission} 任务", "task_directory": task_directory}
+            result = vasp_task.submit_mission(task_directory, mission)
+            if isinstance(result, dict) and result.get("status") == "error":
+                print(f"   错误: {result.get('message', '提交任务失败')}")
+                return {"error": result.get("message", "提交任务失败")}
+            print(f"   结果: 成功提交 {mission} 任务")
+            return {"message": f"已提交 {mission} 任务", "task_directory": task_directory, "result": result}
     except Exception as e:
         return {"error": str(e)}
 
@@ -608,14 +760,7 @@ def modify_incar(
     read: bool,
     write: Optional[str] = None
 ) -> dict:
-    """读写修改计算任务的INCAR文件
-    
-    Args:
-        task_directory: 任务目录路径
-        mission: 计算类型，可选: 'relax', 'scf', 'band', 'dos'
-        read: True读取，False写入
-        write: 写入的INCAR内容（字符串格式或换行分隔的 key=value 格式）
-    """
+    """读写修改计算任务的INCAR文件"""
     subdir_map = {
         "relax": "结构优化",
         "scf": "自洽计算",
@@ -655,23 +800,13 @@ def modify_incar(
 
 @tool
 def extract_result(task_directory: str, mission: str, plot: bool = True) -> dict:
-    """提取计算任务的结果
+    """提取计算任务的结果"""
+    print(f"\n🔧 [{datetime.now().strftime('%H:%M:%S')}] 调用工具: extract_result")
+    print(f"   参数: task_directory='{task_directory}', mission='{mission}', plot={plot}")
     
-    Args:
-        task_directory: 任务目录路径
-        mission: 计算类型，可选: 'relax', 'scf', 'band', 'dos'
-        plot: 是否绘图
-    """
     mission = mission.lower().strip()
     
-    method_map = {
-        "relax": lambda vt: vt.extract_relax_info(task_directory),
-        "scf": lambda vt: vt.extract_scf_info(task_directory),
-        "band": lambda vt: vt.extract_band_info(task_directory),
-        "dos": lambda vt: vt.extract_dos_info(task_directory),
-    }
-    
-    if mission not in method_map:
+    if mission not in ["relax", "scf", "band", "dos"]:
         return {
             "success": False,
             "error": f"未知的计算类型: {mission}，可选: ['relax', 'scf', 'band', 'dos']"
@@ -679,58 +814,75 @@ def extract_result(task_directory: str, mission: str, plot: bool = True) -> dict
     
     try:
         with _get_vasp_connection() as vasp_task:
-            result = method_map[mission](vasp_task)
+            if mission == "relax":
+                result = vasp_task.extract_relax_info(task_directory)
+                if plot and result and not result.get("error"):
+                    try:
+                        # 从 local_files 获取 CONTCAR 路径
+                        local_files = result.get('local_files', {})
+                        contcar_path = local_files.get('contcar')
+                        if contcar_path and os.path.exists(contcar_path):
+                            structure = Structure.from_file(contcar_path)
+                            plot_result = get_structure_plot(structure)
+                            if plot_result.get("Image"):
+                                result["image_url"] = plot_result["Image"]
+                            if plot_result.get("error"):
+                                result["plot_error"] = plot_result["error"]
+                    except Exception as e:
+                        print(f"   生成结构图失败: {e}")
+                        result["plot_error"] = str(e)
+                        
+            elif mission == "scf":
+                result = vasp_task.extract_scf_info(task_directory)
+                
+            elif mission == "band":
+                result = vasp_task.extract_band_info(task_directory)
+                if plot and result and not result.get("error"):
+                    try:
+                        local_files = result.get('local_files', {})
+                        vasprun_path = local_files.get('vasprun.xml')
+                        kpoints_path = local_files.get('KPOINTS')
+                        if vasprun_path and os.path.exists(vasprun_path) and kpoints_path and os.path.exists(kpoints_path):
+                            plot_res = _plot_vasp_band(vasprun_path, kpoints_path)
+                            if plot_res.get("Image"):
+                                result["image_url"] = plot_res["Image"]
+                                result["band_data"] = plot_res.get("data", {})
+                            if plot_res.get("error"):
+                                result["plot_error"] = plot_res["error"]
+                    except Exception as e:
+                        print(f"   生成能带图失败: {e}")
+                        result["plot_error"] = str(e)
+                
+            elif mission == "dos":
+                result = vasp_task.extract_dos_info(task_directory)
+                if plot and result and not result.get("error"):
+                    try:
+                        local_files = result.get('local_files', {})
+                        vasprun_path = local_files.get('vasprun.xml') or local_files.get('vasprun')
+                        if vasprun_path and os.path.exists(vasprun_path):
+                            plot_res = _plot_vasp_dos(vasprun_path)
+                            if plot_res.get("Image"):
+                                result["image_url"] = plot_res["Image"]
+                            if plot_res.get("error"):
+                                result["plot_error"] = plot_res["error"]
+                    except Exception as e:
+                        print(f"   生成DOS图失败: {e}")
+                        result["plot_error"] = str(e)
             
             if isinstance(result, dict) and result.get("error"):
+                print(f"   错误: {result.get('error')}")
                 return {"success": False, "error": result.get("error")}
             
-            return {"success": True, "mission": mission, "result": result}
+            print(f"   结果: 成功提取 {mission} 任务结果")
+            return {"success": True, "mission": mission, "task_directory": task_directory, "result": result}
     except Exception as e:
+        print(f"   错误: {e}")
         return {"success": False, "error": str(e)}
 
 
-@tool
-def read_file(file_path: str) -> dict:
-    """读取MCP服务器上的文件"""
-    try:
-        with open(file_path, "r") as f:
-            content = f.read()
-        return {"content": content, "file_path": file_path}
-    except Exception as e:
-        return {"error": str(e)}
-
-
 # ============================================================
-# 工具列表 - 与 mpmcp.py 一致
+# 项目管理工具
 # ============================================================
-
-TOOLS = [
-    get_time,
-    get_material_project_page,
-    search_materials_from_oqmd,
-    get_material_structure_from_oqmd,
-    search_materials_from_mp,
-    get_band_gap,
-    get_material_structure_from_mp,
-    build_structure,
-    get_material_all_infomation_by_id,
-    create_task,
-    list_task_directories,
-    check_squeue,
-    execute_command,
-    extract_file,
-    predict_band_gap,
-    read_file,
-    create_mission,
-    submit_mission,
-    modify_incar,
-    extract_result,
-]
-
-# 项目管理工具（mpmcp.py 中被注释，本地实现）
-PROJECT_FILE = "material_workflow.json"
-
-
 @tool
 def list_all_projects() -> dict:
     """列出所有材料研发项目"""
@@ -761,7 +913,6 @@ def set_task_progress(
             projects[project_name]["description"] = description
     
     if step_name and status:
-        from datetime import datetime
         projects[project_name][step_name] = {
             "status": status,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -788,14 +939,49 @@ def get_project_workflow(project_name: str) -> dict:
     return {"project": project_name, "workflow": projects[project_name]}
 
 
-TOOLS.extend([list_all_projects, set_task_progress, get_project_workflow])
+# ============================================================
+# 工具列表
+# ============================================================
+TOOLS = [
+    # 基础工具
+    get_time,
+    read_file,
+    # Materials Project
+    get_material_project_page,
+    search_materials_from_mp,
+    get_band_gap,
+    get_material_structure_from_mp,
+    get_material_all_infomation_by_id,
+    # OQMD
+    search_materials_from_oqmd,
+    get_material_structure_from_oqmd,
+    # 结构构建
+    build_structure,
+    # ML预测
+    predict_band_gap,
+    # VASP计算
+    create_task,
+    list_task_directories,
+    check_squeue,
+    execute_command,
+    extract_file,
+    create_mission,
+    submit_mission,
+    modify_incar,
+    extract_result,
+    # 项目管理
+    list_all_projects,
+    set_task_progress,
+    get_project_workflow,
+]
 
 
 # ============================================================
-# LangGraph Agent 实现
+# MatAgent 类 - LangGraph Agent 实现
 # ============================================================
-
 class MatAgent:
+    """基于 LangGraph 的材料科学智能助手"""
+    
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY")
         if not self.api_key:
@@ -814,7 +1000,6 @@ class MatAgent:
         self._graph = self._build_graph()
         self._message_history = []
         
-        # 直接导入 tryssh 供方法调用
         import tryssh
         self._tryssh = tryssh
         self._connection = None
@@ -831,7 +1016,7 @@ class MatAgent:
         return self._connection
     
     def _build_graph(self):
-        """构建 LangGraph 状态图 (使用标准 ReAct 模式)"""
+        """构建 LangGraph 状态图"""
         
         def assistant_node(state: AgentState) -> dict:
             """Assistant 节点：调用 LLM"""
@@ -839,10 +1024,12 @@ class MatAgent:
                 content="""你是一个专业的材料科学智能助手，帮助用户进行材料设计与计算。
 
 重要规则：
-1. 获取材料结构后，必须在回复中用 Markdown 格式嵌入图片链接
+0. 务必真实使用工具，不许捏造结果
+1. 调用工具后，如果返回结果里有url，必须在回复中用 Markdown 格式嵌入图片链接
 2. 2D结构图用: ![2D结构图](http://localhost:6750/image/图片文件名)
 3. 3D结构图用: [查看3D交互结构](http://localhost:6750/view/结构ID)
 4. 告诉用户点击链接查看
+5. submib_mission和extract_result的路径直接用父目录如/data/user/mission/InGaP2_20260407/
 
 直接使用上述 HTTP URL 格式，不要使用本地文件路径。"""
             )
@@ -865,37 +1052,28 @@ class MatAgent:
         return workflow.compile()
     
     def chat(self, user_message: str) -> dict:
-        """使用 LangGraph 处理对话，支持上下文记忆"""
+        """处理对话，支持上下文记忆"""
         start_time = time.time()
         
         try:
-            # 添加用户消息到历史
             self._message_history.append(HumanMessage(content=user_message))
-            
-            # 保留最近 20 条消息
             recent_messages = self._message_history[-20:]
             
             initial_state = {"messages": recent_messages}
-            
             final_state = self._graph.invoke(initial_state)
             
             duration = int((time.time() - start_time) * 1000)
-            
             messages = final_state.get("messages", [])
             
-            # 获取助手回复
             assistant_messages = [m for m in messages if isinstance(m, AIMessage) and not hasattr(m, 'tool_call_id')]
             final_message = assistant_messages[-1].content if assistant_messages else "完成"
             
-            # 添加助手回复到历史
             if assistant_messages:
                 self._message_history.append(AIMessage(content=final_message))
             
             tool_results = []
             
-            # 遍历所有消息，收集 tool_calls 和 tool responses
             for msg in messages:
-                # AIMessage: 有 tool_calls，包含参数信息
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     for tc in msg.tool_calls:
                         tool_results.append({
@@ -904,18 +1082,15 @@ class MatAgent:
                             "result": ""
                         })
                 
-                # ToolMessage: 有 tool_call_id，包含执行结果
                 elif hasattr(msg, "tool_call_id") and msg.tool_call_id:
                     tool_name = getattr(msg, "name", None) or "unknown"
                     result = msg.content if hasattr(msg, "content") else str(msg)
                     
-                    # 匹配已有的 tool_results
                     for tr in tool_results:
                         if tr["tool_name"] == tool_name and tr["result"] == "":
                             tr["result"] = result
                             break
                     else:
-                        # 如果没有匹配的，创建新的
                         tool_results.append({
                             "tool_name": tool_name,
                             "tool_args": {},
@@ -944,7 +1119,7 @@ class MatAgent:
             }
     
     def stream_chat(self, user_message: str):
-        """流式处理对话，用于 Streamlit 实时显示"""
+        """流式处理对话"""
         initial_state = {"messages": [HumanMessage(content=user_message)]}
         
         for step in self._graph.stream(initial_state, stream_mode="values"):
@@ -952,11 +1127,6 @@ class MatAgent:
             
             if messages:
                 last_msg = messages[-1]
-                tool_calls = []
-                if hasattr(last_msg, "tool_calls"):
-                    tool_calls = last_msg.tool_calls
-                
-                # 返回可迭代的生成器，供 st.write_stream 使用
                 if last_msg.content:
                     yield last_msg.content
     
@@ -964,6 +1134,9 @@ class MatAgent:
         """获取当前状态（用于调试）"""
         return self._graph.get_state({})
     
+    # ============================================================
+    # 便捷方法封装（供直接调用）
+    # ============================================================
     def list_task_directories(self) -> dict:
         """列出远程任务目录"""
         try:
@@ -1022,11 +1195,11 @@ class MatAgent:
         except Exception as e:
             return {"error": str(e)}
     
-    def extract_opt_info(self, task_directory: str) -> dict:
+    def extract_relax_info(self, task_directory: str) -> dict:
         """提取结构优化结果"""
         try:
             with self._get_connection() as vasp_task:
-                result = vasp_task.extract_opt_info(task_directory)
+                result = vasp_task.extract_relax_info(task_directory)
                 return result
         except Exception as e:
             return {"error": str(e)}
@@ -1054,9 +1227,6 @@ class MatAgent:
                        save_to_cif: bool = False) -> dict:
         """构建晶体结构"""
         try:
-            from pymatgen.core import Structure, Lattice
-            from pymatgen.io.cif import CifWriter
-            
             lattice = Lattice.from_parameters(a, b, c, alpha, beta, gamma)
             structure = Structure(lattice, elements, frac_coord)
             
@@ -1091,7 +1261,6 @@ class MatAgent:
     def predict_band_gap(self, formula: str) -> dict:
         """预测带隙"""
         try:
-            import myml.bandgap_predict as bandgap_predict
             result = bandgap_predict.predict_bandgap(formula)
             return {"formula": formula, "predicted_band_gap": result[0] if result else None}
         except Exception as e:
@@ -1140,7 +1309,6 @@ class MatAgent:
         """获取材料结构"""
         try:
             from mp_api.client import MPRester
-            from pymatgen.io.cif import CifWriter
             
             API_KEY = config.get_api_key()
             if not API_KEY:
@@ -1180,17 +1348,11 @@ class MatAgent:
                     result["cif_path"] = cif_path
                 
                 if get_plot:
-                    # 生成2D结构图
                     plot_result = get_structure_plot(structure)
                     if plot_result.get("Image"):
                         result["2d_image_url"] = plot_result["Image"]
                     
-                    # 生成3D结构
                     try:
-                        import tempfile
-                        from ase.io import write
-                        from pymatgen.io.ase import AseAtomsAdaptor
-                        
                         atoms = AseAtomsAdaptor.get_atoms(structure)
                         with tempfile.NamedTemporaryFile(suffix='.html', delete=False, mode='w') as tmp:
                             write(tmp.name, atoms, format='html')
@@ -1248,10 +1410,24 @@ class MatAgent:
     
     def submit_mission(self, task_directory: str, mission: str) -> dict:
         """提交计算任务"""
+        mission = mission.lower().strip()
+        
+        submit_method_map = {
+            "relax": lambda vt, td: vt.submit_relax_calculation(td),
+            "scf": lambda vt, td: vt.submit_scf_calculation(td),
+            "band": lambda vt, td: vt.submit_band_calculation(td),
+            "dos": lambda vt, td: vt.submit_dos_calculation(td),
+        }
+        
+        if mission not in submit_method_map:
+            return {"error": f"未知的计算类型: {mission}，可选: relax, scf, band, dos"}
+        
         try:
             with self._get_connection() as vasp_task:
-                vasp_task.submit_mission(task_directory, mission)
-                return {"message": f"已提交 {mission} 任务", "task_directory": task_directory}
+                result = submit_method_map[mission](vasp_task, task_directory)
+                if isinstance(result, dict) and result.get("status") != "ok":
+                    return {"error": result.get("message", "提交失败")}
+                return {"message": f"已提交 {mission} 任务", "task_directory": task_directory, "result": result}
         except Exception as e:
             return {"error": str(e)}
     
@@ -1278,6 +1454,9 @@ class MatAgent:
             return {"success": False, "error": str(e)}
 
 
+# ============================================================
+# 工厂函数和初始化
+# ============================================================
 def create_langchain_agent(api_key: str = None) -> MatAgent:
     """创建 LangChain Agent 实例"""
     return MatAgent(api_key)
@@ -1285,8 +1464,6 @@ def create_langchain_agent(api_key: str = None) -> MatAgent:
 
 def init_services():
     """初始化远程连接和可视化服务"""
-    import tryssh
-    
     print("正在连接远程服务器...")
     connection = tryssh.VaspTaskInitializer(
         config.get_host(),
@@ -1310,6 +1487,9 @@ def init_services():
     return connection
 
 
+# ============================================================
+# 主程序入口
+# ============================================================
 if __name__ == "__main__":
     try:
         connection = init_services()

@@ -175,10 +175,12 @@ def chat_with_agent(message: str, history: list = None) -> dict:
                 "message": message,
                 "history": history
             },
-            timeout=120
+            timeout=300  # 增加到 5 分钟
         )
         response.raise_for_status()
         return response.json()
+    except requests.exceptions.Timeout:
+        return {"type": "error", "message": "Agent 响应超时，可能是操作耗时较长，请稍后重试或简化问题"}
     except requests.exceptions.ConnectionError:
         return {"type": "error", "message": "Agent 服务未运行，请启动: python agent_server.py"}
     except Exception as e:

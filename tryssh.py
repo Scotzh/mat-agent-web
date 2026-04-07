@@ -188,12 +188,21 @@ class VaspTaskInitializer:
         
         # 提取信息
         outcar_info = _extract_outcar(calculation_outcar)
-        structure_info = _extract_crystal_structure(calculation_contcar)
+        structure_info_tuple = _extract_crystal_structure(calculation_contcar)
+        
+        # structure_info_tuple[1] 是 Structure 对象，需要转换为可序列化的字典
+        structure_obj = structure_info_tuple[1]
+        structure_dict = None
+        if structure_obj is not None:
+            try:
+                structure_dict = structure_obj.as_dict()
+            except:
+                structure_dict = None
         
         return {
-            "structure": structure_info[1],
+            "structure": structure_dict,
             "outcar_info": outcar_info, 
-            "structure_info": structure_info[0],
+            "structure_info": structure_info_tuple[0],
             "local_files": {
                 "outcar": calculation_outcar,
                 "contcar": calculation_contcar
@@ -312,14 +321,17 @@ class VaspTaskInitializer:
             # 能量信息
             print(f"最终能量: {vasprun.final_energy} eV")
             print(f"每原子能量: {vasprun.final_energy/len(vasprun.final_structure)} eV/atom")
-            vasprun_info['final_energy'] = vasprun.final_energy
-            vasprun_info['energy_per_atom'] = vasprun.final_energy / len(vasprun.final_structure)
+            vasprun_info['final_energy'] = float(vasprun.final_energy) if vasprun.final_energy is not None else None
+            vasprun_info['energy_per_atom'] = float(vasprun.final_energy / len(vasprun.final_structure)) if vasprun.final_energy is not None else None
 
             # 电子信息
             print(f"费米能级: {vasprun.efermi} eV")
-            print(f"能隙: {vasprun.eigenvalue_band_properties[0]} eV")
-            vasprun_info['efermi'] = vasprun.efermi
-            vasprun_info['band_gap'] = vasprun.eigenvalue_band_properties[0]
+            eigenvalue_props = vasprun.eigenvalue_band_properties
+            if eigenvalue_props and len(eigenvalue_props) > 0:
+                band_gap = eigenvalue_props[0]
+                print(f"能隙: {band_gap} eV")
+                vasprun_info['band_gap'] = float(band_gap) if band_gap is not None else None
+            vasprun_info['efermi'] = float(vasprun.efermi) if vasprun.efermi is not None else None
 
         except Exception as e:
             print(f"Error reading vasprun.xml: {e}")
@@ -389,11 +401,31 @@ class VaspTaskInitializer:
                 v = vasp.Vasprun(downloaded_info["vasprun.xml"])
                 bs = v.get_band_structure(downloaded_info["KPOINTS"], line_mode=True)
                 # 获取带隙、VBM、CBM等
-                # band_info['band'] = v.eigenvalue_band_properties
-                band_info['is_metal'] = bs.is_metal()
-                band_info['gap'] = bs.get_band_gap()
-                band_info['vbm'] = bs.get_vbm()
-                band_info['cbm'] = bs.get_cbm()
+                band_info['is_metal'] = bool(bs.is_metal())
+                
+                # get_band_gap() 返回字典，确保可序列化
+                gap_info = bs.get_band_gap()
+                if gap_info:
+                    band_info['gap'] = {
+                        'energy': float(gap_info.get('energy', 0)) if gap_info.get('energy') else None,
+                        'direct': bool(gap_info.get('direct', False)),
+                        'transition': str(gap_info.get('transition', ''))
+                    }
+                
+                # get_vbm() 和 get_cbm() 返回 (能量, 坐标, 轨道索引) 元组
+                vbm = bs.get_vbm()
+                if vbm:
+                    band_info['vbm'] = {
+                        'energy': float(vbm[0]) if vbm[0] is not None else None,
+                        'kpoint': [float(x) for x in vbm[1]] if vbm[1] is not None else None
+                    }
+                
+                cbm = bs.get_cbm()
+                if cbm:
+                    band_info['cbm'] = {
+                        'energy': float(cbm[0]) if cbm[0] is not None else None,
+                        'kpoint': [float(x) for x in cbm[1]] if cbm[1] is not None else None
+                    }
             except Exception as e:
                 print(f"解析能带XML失败: {e}")
 
@@ -485,9 +517,12 @@ class VaspTaskInitializer:
                     fermi_lines = [line for line in content.split('\n') if 'E-fermi' in line]
                     if fermi_lines:
                         fermi_line = fermi_lines[-1]  # 取最后一个
-                        efermi = float(fermi_line.split())
-                        dos_info['fermi_energy'] = efermi
-                        print(f"费米能级: {efermi} eV")
+                        # E-fermi line format: "E-fermi : XX.XXXX eV"
+                        parts = fermi_line.split()
+                        if len(parts) >= 3:
+                            efermi = float(parts[2])
+                            dos_info['fermi_energy'] = efermi
+                            print(f"费米能级: {efermi} eV")
             except Exception as e:
                 print(f"解析OUTCAR失败: {e}")
         
@@ -508,29 +543,23 @@ class VaspTaskInitializer:
                         # 计算费米能级以下的积分
                         if fermi_idx > 0:
                             integrated_dos = np.trapezoid(dos_values[:fermi_idx], energies[:fermi_idx])
-                            dos_info['integrated_dos'] = integrated_dos
+                            dos_info['integrated_dos'] = float(integrated_dos)
                             print(f"费米能级以下积分态密度: {integrated_dos:.4f} 电子数")
                     
                     # 计算DOS最大值和位置
                     max_dos_idx = np.argmax(dos_values)
-                    dos_info['max_dos'] = dos_values[max_dos_idx]
-                    dos_info['max_dos_energy'] = energies[max_dos_idx]
+                    dos_info['max_dos'] = float(dos_values[max_dos_idx])
+                    dos_info['max_dos_energy'] = float(energies[max_dos_idx])
                     print(f"最大DOS值: {dos_values[max_dos_idx]:.4f} states/eV at {energies[max_dos_idx]:.4f} eV")
                     
                     # 计算DOS宽度（超过阈值的能量范围）
                     threshold = 0.01 * dos_info['max_dos']  # 最大值的1%作为阈值
                     significant_indices = np.where(dos_values > threshold)
                     if len(significant_indices) > 0:
-                        dos_info['dos_width'] = energies[significant_indices[-1]] - energies[significant_indices[0]]
+                        dos_info['dos_width'] = float(energies[significant_indices[-1][-1]] - energies[significant_indices[0][0]])
                         print(f"DOS宽度: {dos_info['dos_width']:.4f} eV")
             except Exception as e:
                 print(f"解析TDOS.dat失败: {e}")
-        
-                    
-            except ImportError:
-                print("pymatgen未安装，跳过详细解析")
-            except Exception as e:
-                print(f"pymatgen解析失败: {e}")
         return {
             "status": "提取完成",
             "dos_info": dos_info,
@@ -848,6 +877,62 @@ class VaspTaskInitializer:
                 if match:
                     result["job_id"] = match.group(1)
         return result
+
+    def create_mission(self, task_directory: str, mission: str) -> dict:
+        """
+        创建计算任务的输入文件（通用接口）
+        
+        Args:
+            task_directory: 任务目录路径
+            mission: 计算类型，可选: 'relax', 'scf', 'band', 'dos'
+            
+        Returns:
+            执行结果字典
+        """
+        mission = mission.lower().strip()
+        
+        create_method_map = {
+            "relax": self.create_relax_mission,
+            "scf": self.create_scf_mission,
+            "band": self.create_band_mission,
+            "dos": self.create_dos_mission,
+        }
+        
+        if mission not in create_method_map:
+            return {
+                "status": "error",
+                "message": f"未知的计算类型: {mission}，可选: {list(create_method_map.keys())}"
+            }
+        
+        return create_method_map[mission](task_directory)
+
+    def submit_mission(self, task_directory: str, mission: str) -> dict:
+        """
+        提交计算任务（通用接口）
+        
+        Args:
+            task_directory: 任务目录路径
+            mission: 计算类型，可选: 'relax', 'scf', 'band', 'dos'
+            
+        Returns:
+            执行结果字典
+        """
+        mission = mission.lower().strip()
+        
+        submit_method_map = {
+            "relax": self.submit_relax_calculation,
+            "scf": self.submit_scf_calculation,
+            "band": self.submit_band_calculation,
+            "dos": self.submit_dos_calculation,
+        }
+        
+        if mission not in submit_method_map:
+            return {
+                "status": "error",
+                "message": f"未知的计算类型: {mission}，可选: {list(submit_method_map.keys())}"
+            }
+        
+        return submit_method_map[mission](task_directory)
 
     def modify_incar_file(self, task_directory: str, mission: str, read_mode: bool = True, 
                           new_params: dict = None) -> dict:

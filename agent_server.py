@@ -7,9 +7,11 @@ import os
 import json
 import sys
 import time
+import asyncio
 from typing import Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +39,9 @@ _agent_lock = False
 
 # 会话管理
 _sessions: Dict[str, Dict[str, Any]] = {}
+
+# 线程池执行器
+_executor = ThreadPoolExecutor(max_workers=4)
 
 
 class ChatRequest(BaseModel):
@@ -115,8 +120,21 @@ async def chat(request: ChatRequest):
                 elif msg["role"] == "assistant":
                     agent._message_history.append(AIMessage(content=msg["content"]))
         
-        # 执行对话
-        result = agent.chat(request.message)
+        # 在线程池中执行同步的 agent.chat() 调用，避免阻塞事件循环
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(_executor, agent.chat, request.message)
+        
+        # 打印工具调用日志
+        if result.get("tool_results"):
+            print(f"\n🔧 [{datetime.now().strftime('%H:%M:%S')}] 会话 {request.session_id[:8]}... 调用了 {len(result['tool_results'])} 个工具:")
+            for i, tr in enumerate(result["tool_results"], 1):
+                print(f"  {i}. 工具: {tr.get('tool_name', 'unknown')}")
+                print(f"     参数: {json.dumps(tr.get('tool_args', {}), ensure_ascii=False)}")
+                result_preview = str(tr.get('result', ''))[:200]
+                if len(str(tr.get('result', ''))) > 200:
+                    result_preview += "..."
+                print(f"     结果: {result_preview}")
+            print()
         
         # 保存会话状态
         _sessions[request.session_id] = {
