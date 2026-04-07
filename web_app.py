@@ -28,16 +28,37 @@ if "langchain_connected" not in st.session_state:
 if "selected_material" not in st.session_state:
     st.session_state.selected_material = None
 
-# 加载最近会话
-if "session_id" not in st.session_state:
-    sessions = databasemanage.list_sessions(limit=1)
-    if sessions:
-        st.session_state.session_id = sessions[0]["session_id"]
-        history = databasemanage.get_chat_history(st.session_state.session_id)
+# 加载最近会话（每次页面加载时检查）
+current_session_id = st.session_state.get("session_id")
+recent_sessions = databasemanage.list_sessions(limit=1)
+recent_session_id = recent_sessions[0]["session_id"] if recent_sessions else None
+
+# 如果没有session_id，或者当前会话和最近会话不同，或者消息为空
+if not current_session_id:
+    if recent_session_id:
+        st.session_state.session_id = recent_session_id
+        history = databasemanage.get_chat_history(recent_session_id)
         if history:
             st.session_state.messages = [{"role": h["role"], "content": h["content"]} for h in history]
     else:
         st.session_state.session_id = str(uuid.uuid4())
+        st.session_state.messages = []
+elif not st.session_state.get("messages"):
+    # 消息为空时从数据库加载
+    history = databasemanage.get_chat_history(current_session_id)
+    st.session_state.messages = [{"role": h["role"], "content": h["content"]} for h in history]
+
+# 页面加载时自动同步历史消息到 Agent
+if st.session_state.get("agent") and st.session_state.get("messages"):
+    from langchain_core.messages import HumanMessage, AIMessage
+    # 只在 Agent 消息为空或数量不匹配时同步
+    if len(st.session_state.agent._message_history) != len(st.session_state.messages):
+        st.session_state.agent._message_history = []
+        for msg in st.session_state.messages:
+            if msg["role"] == "user":
+                st.session_state.agent._message_history.append(HumanMessage(content=msg["content"]))
+            elif msg["role"] == "assistant":
+                st.session_state.agent._message_history.append(AIMessage(content=msg["content"]))
 
 # 确保每次页面加载时同步历史消息到 Agent
 def _sync_agent_history():
@@ -148,12 +169,24 @@ def sidebar_functions():
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("🔄 重置对话"):
+                    # 先保存当前会话消息
+                    if st.session_state.get("messages"):
+                        for msg in st.session_state.messages:
+                            databasemanage.add_chat_message(
+                                st.session_state.session_id, msg["role"], msg["content"]
+                            )
                     if st.session_state.agent:
                         st.session_state.agent._message_history = []
                     st.session_state.messages = []
                     st.rerun()
             with col2:
                 if st.button("✨ 新建会话"):
+                    # 先保存当前会话消息
+                    if st.session_state.get("messages"):
+                        for msg in st.session_state.messages:
+                            databasemanage.add_chat_message(
+                                st.session_state.session_id, msg["role"], msg["content"]
+                            )
                     # 清除当前会话消息
                     st.session_state.messages = []
                     # 生成新会话ID
@@ -175,10 +208,20 @@ def sidebar_functions():
             for s in sessions:
                 session_label = f"{s['session_id'][:8]}... | {s['last_time']}"
                 if st.button(session_label, key=f"session_{s['session_id']}"):
+                    # 保存当前会话消息到数据库
+                    if st.session_state.get("messages"):
+                        for msg in st.session_state.messages:
+                            databasemanage.add_chat_message(
+                                st.session_state.session_id, msg["role"], msg["content"]
+                            )
                     # 切换到该会话
                     st.session_state.session_id = s["session_id"]
                     history = databasemanage.get_chat_history(s["session_id"])
                     st.session_state.messages = [{"role": h["role"], "content": h["content"]} for h in history]
+                    
+                    # 立即显示消息（不等待rerun）
+                    st.session_state.show_history_immediately = True
+                    
                     # 更新 Agent 的消息历史
                     if st.session_state.agent:
                         st.session_state.agent._message_history = []
@@ -206,6 +249,40 @@ def sidebar_functions():
 
 def chat_interface():
     st.markdown('<p class="main-header">💬 AI 对话</p>', unsafe_allow_html=True)
+
+    # 立即显示历史消息（页面加载时）
+    if st.session_state.get("messages"):
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+            
+            if msg.get("tool_results"):
+                for tr in msg["tool_results"]:
+                    tool_name = tr.get("tool_name", "")
+                    tool_args = tr.get("tool_args", {})
+                    result = tr.get("result")
+                    
+                    with st.expander(f"🔧 {tool_name}"):
+                        st.markdown(f"**参数:** `{tool_args}`")
+                        
+                        if isinstance(result, dict):
+                            img_url = result.get("2d_image_url", "")
+                            if img_url:
+                                st.markdown("**2D 结构图:**")
+                                try:
+                                    st.image(img_url, width=400)
+                                except Exception as e:
+                                    st.error(f"图片路径: {img_url}, 错误: {e}")
+                            
+                            if result.get("3d_html_url"):
+                                st.markdown(f"**3D 结构图:** [查看3D结构]({result['3d_html_url']})")
+                            
+                            json_data = {k: v for k, v in result.items() 
+                                        if k not in ["2d_image_url", "3d_html_url", "cif_path"]}
+                            if json_data:
+                                st.json(json_data)
+                        else:
+                            st.code(str(result))
 
     # 处理待处理的消息（用于实时显示工具调用）
     if "pending_prompt" in st.session_state:
@@ -298,40 +375,6 @@ def chat_interface():
                     databasemanage.add_chat_message(
                         st.session_state.session_id, "assistant", "请先在左侧点击「初始化 Agent」"
                     )
-        
-
-        # 显示历史消息
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-            
-            if msg.get("tool_results"):
-                for tr in msg["tool_results"]:
-                    tool_name = tr.get("tool_name", "")
-                    tool_args = tr.get("tool_args", {})
-                    result = tr.get("result")
-                    
-                    with st.expander(f"🔧 {tool_name}"):
-                        st.markdown(f"**参数:** `{tool_args}`")
-                        
-                        if isinstance(result, dict):
-                            img_url = result.get("2d_image_url", "")
-                            if img_url:
-                                st.markdown("**2D 结构图:**")
-                                try:
-                                    st.image(img_url, width=400)
-                                except Exception as e:
-                                    st.error(f"图片路径: {img_url}, 错误: {e}")
-                            
-                            if result.get("3d_html_url"):
-                                st.markdown(f"**3D 结构图:** [查看3D结构]({result['3d_html_url']})")
-                            
-                            json_data = {k: v for k, v in result.items() 
-                                        if k not in ["2d_image_url", "3d_html_url", "cif_path"]}
-                            if json_data:
-                                st.json(json_data)
-                        else:
-                            st.code(str(result))
 
     if prompt := st.chat_input("描述您的材料科学需求..."):
         st.session_state["pending_prompt"] = prompt
