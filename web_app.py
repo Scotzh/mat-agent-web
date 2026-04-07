@@ -288,35 +288,37 @@ def chat_interface():
     if st.session_state.get("messages"):
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-            
-            if msg.get("tool_results"):
-                for tr in msg["tool_results"]:
-                    tool_name = tr.get("tool_name", "")
-                    tool_args = tr.get("tool_args", {})
-                    result = tr.get("result")
-                    
-                    with st.expander(f"🔧 {tool_name}"):
-                        st.markdown(f"**参数:** `{tool_args}`")
+                # 先显示工具调用（如果有）
+                if msg.get("tool_results"):
+                    for tr in msg["tool_results"]:
+                        tool_name = tr.get("tool_name", "")
+                        tool_args = tr.get("tool_args", {})
+                        result = tr.get("result")
                         
-                        if isinstance(result, dict):
-                            img_url = result.get("2d_image_url", "")
-                            if img_url:
-                                st.markdown("**2D 结构图:**")
-                                try:
-                                    st.image(img_url, width=400)
-                                except Exception as e:
-                                    st.error(f"图片路径: {img_url}, 错误: {e}")
+                        with st.expander(f"🔧 {tool_name}"):
+                            st.markdown(f"**参数:** `{tool_args}`")
                             
-                            if result.get("3d_html_url"):
-                                st.markdown(f"**3D 结构图:** [查看3D结构]({result['3d_html_url']})")
-                            
-                            json_data = {k: v for k, v in result.items() 
-                                        if k not in ["2d_image_url", "3d_html_url", "cif_path"]}
-                            if json_data:
-                                st.json(json_data)
-                        else:
-                            st.code(str(result))
+                            if isinstance(result, dict):
+                                img_url = result.get("2d_image_url", "")
+                                if img_url:
+                                    st.markdown("**2D 结构图:**")
+                                    try:
+                                        st.image(img_url, width=400)
+                                    except Exception as e:
+                                        st.error(f"图片路径: {img_url}, 错误: {e}")
+                                
+                                if result.get("3d_html_url"):
+                                    st.markdown(f"**3D 结构图:** [查看3D结构]({result['3d_html_url']})")
+                                
+                                json_data = {k: v for k, v in result.items() 
+                                            if k not in ["2d_image_url", "3d_html_url", "cif_path"]}
+                                if json_data:
+                                    st.json(json_data)
+                            else:
+                                st.code(str(result))
+                
+                # 再显示消息内容
+                st.markdown(msg["content"])
 
     # 处理待处理的消息（用于实时显示工具调用）
     if "pending_prompt" in st.session_state:
