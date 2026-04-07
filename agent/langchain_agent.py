@@ -988,7 +988,7 @@ class MatAgent:
             raise ValueError("请设置 DEEPSEEK_API_KEY 环境变量")
         
         self.llm = ChatOpenAI(
-            model="deepseek-chat",
+            model="deepseek-reasoner",
             base_url="https://api.deepseek.com/v1",
             api_key=self.api_key,
             temperature=0.7
