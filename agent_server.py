@@ -261,5 +261,90 @@ async def extract_result(task_directory: str, mission: str, plot: bool = False):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ========== 材料查询 API ==========
+
+@app.get("/materials/search")
+async def search_materials(
+    elements: str = None,
+    exclude_elements: str = None,
+    chemsys: str = None,
+    band_gap_min: float = None,
+    band_gap_max: float = None,
+    chunk_size: int = 25
+):
+    """搜索 Materials Project 材料"""
+    agent = get_agent()
+    try:
+        # 解析参数
+        elements_list = elements.split(",") if elements else None
+        exclude_list = exclude_elements.split(",") if exclude_elements else None
+        band_gap = None
+        if band_gap_min is not None or band_gap_max is not None:
+            band_gap = (band_gap_min or 0, band_gap_max or 5)
+        
+        result = agent.search_materials(
+            elements=elements_list,
+            exclude_elements=exclude_list,
+            chemsys=chemsys,
+            band_gap=band_gap,
+            chunk_size=chunk_size
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/materials/structure/{material_id}")
+async def get_material_structure(
+    material_id: str,
+    get_sites: bool = False,
+    get_plot: bool = True,
+    download: bool = False
+):
+    """获取材料结构"""
+    agent = get_agent()
+    try:
+        result = agent.get_material_structure(
+            material_id=material_id,
+            get_sites=get_sites,
+            get_plot=get_plot,
+            download=download
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========== 结构建模 API ==========
+
+@app.post("/structure/build")
+async def build_structure(
+    a: float, b: float, c: float,
+    alpha: float, beta: float, gamma: float,
+    elements: str,  # 逗号分隔的元素列表
+    frac_coords: str,  # JSON 格式的坐标列表
+    scaling_matrix: int = None,
+    save_to_cif: bool = False
+):
+    """构建晶体结构"""
+    agent = get_agent()
+    try:
+        import json
+        elements_list = elements.split(",")
+        frac_coords_list = json.loads(frac_coords)
+        
+        result = agent.build_structure(
+            a=a, b=b, c=c,
+            alpha=alpha, beta=beta, gamma=gamma,
+            elements=elements_list,
+            frac_coord=frac_coords_list,
+            scaling_matrix=scaling_matrix,
+            save_to_cif=save_to_cif
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8765)

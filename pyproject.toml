@@ -77,7 +77,7 @@ dependencies = [
     "palettable==3.3.3",
     "pandas==2.3.0",
     "paramiko==3.5.1",
-    "pillow==11.2.1",
+    "pillow==12.2.0",
     "plotly==6.1.2",
     "pybtex==0.24.0",
     "pycparser==2.22",

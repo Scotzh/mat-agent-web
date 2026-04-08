@@ -1297,7 +1297,7 @@ class MatAgent:
                 results = mpr.summary.search(
                     **criteria,
                     fields=["material_id", "formula_pretty", "band_gap", "symmetry"],
-                    chunk_size=chunk_size
+                    num_chunks=chunk_size
                 )
                 
                 return {"materials": [{

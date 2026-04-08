@@ -20,6 +20,23 @@ if "db" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Agent API 地址（通过 agent_server 访问）
+AGENT_API_URL = "http://127.0.0.1:8765"
+
+def call_agent_api(endpoint: str, method: str = "GET", params: dict = None, json_data: dict = None):
+    """调用 Agent Server API"""
+    import requests
+    url = f"{AGENT_API_URL}{endpoint}"
+    try:
+        if method == "GET":
+            response = requests.get(url, params=params, timeout=30)
+        else:
+            response = requests.post(url, params=params, json=json_data, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": str(e)}
+
 if "agent" not in st.session_state:
     st.session_state.agent = None
 
@@ -600,15 +617,22 @@ def material_search_panel():
 
         with st.spinner("搜索中..."):
             try:
-                result = st.session_state.agent.search_materials(
-                    elements=elements if elements else None,
-                    exclude_elements=exclude_elements if exclude_elements else None,
-                    chemsys=chemsys if chemsys else None,
-                    band_gap=(band_gap_min, band_gap_max)
-                    if band_gap_min > 0 or band_gap_max < 5
-                    else None,
-                    chunk_size=chunk_size,
+                # 通过 API 调用
+                result = call_agent_api(
+                    "/materials/search",
+                    params={
+                        "elements": ",".join(elements) if elements else None,
+                        "exclude_elements": ",".join(exclude_elements) if exclude_elements else None,
+                        "chemsys": chemsys if chemsys else None,
+                        "band_gap_min": band_gap_min if band_gap_min > 0 else None,
+                        "band_gap_max": band_gap_max if band_gap_max < 5 else None,
+                        "chunk_size": chunk_size
+                    }
                 )
+                
+                if "error" in result:
+                    st.error(f"搜索失败: {result['error']}")
+                    return
 
                 st.session_state.search_results = result
 
@@ -641,21 +665,23 @@ def material_search_panel():
                     
                     mat_id = r.get("material_id")
                     if col2.button("📊 查看结构", key=f"view_{mat_id}"):
-                        if st.session_state.langchain_connected:
-                            with st.spinner("获取结构中..."):
-                                try:
-                                    result = st.session_state.agent.get_material_structure(
-                                        material_id=mat_id,
-                                        get_sites=True,
-                                        get_plot=True,
-                                        download=False
-                                    )
-                                    if "error" in result:
-                                        st.error(result.get("error"))
-                                    else:
-                                        st.session_state.viewed_structure = result
-                                except Exception as e:
-                                    st.error(f"获取失败: {e}")
+                        with st.spinner("获取结构中..."):
+                            try:
+                                # 通过 API 调用
+                                result = call_agent_api(
+                                    f"/materials/structure/{mat_id}",
+                                    params={
+                                        "get_sites": "true",
+                                        "get_plot": "true",
+                                        "download": "false"
+                                    }
+                                )
+                                if "error" in result:
+                                    st.error(result.get("error"))
+                                else:
+                                    st.session_state.viewed_structure = result
+                            except Exception as e:
+                                st.error(f"获取失败: {e}")
                     
                     if "viewed_structure" in st.session_state and st.session_state.get("viewed_structure", {}).get("material_id") == mat_id:
                         struct = st.session_state.viewed_structure
@@ -717,12 +743,30 @@ def structure_builder_panel():
 
     with col2:
         st.markdown("**原子信息**")
-        elements_input = st.text_input("元素符号 (逗号分隔)", placeholder="Na, Cl")
-        coords_input = st.text_area(
-            "分数坐标 (每行一个坐标，用逗号分隔)",
-            placeholder="0, 0, 0\n0.5, 0.5, 0.5",
-            height=150,
+        
+        # 使用表格编辑器输入原子信息
+        import pandas as pd
+        
+        # 初始化示例数据
+        if "atom_data" not in st.session_state:
+            st.session_state.atom_data = pd.DataFrame([
+                {"元素": "Na", "x": 0.0, "y": 0.0, "z": 0.0},
+                {"元素": "Cl", "x": 0.5, "y": 0.5, "z": 0.5},
+            ])
+        
+        atom_data = st.data_editor(
+            st.session_state.atom_data,
+            num_rows="dynamic",
+            use_container_width=True,
+            column_config={
+                "元素": st.column_config.TextColumn("元素", width="small", help="元素符号如 Na, Cl"),
+                "x": st.column_config.NumberColumn("x", format="%.4f", help="分数坐标 x"),
+                "y": st.column_config.NumberColumn("y", format="%.4f", help="分数坐标 y"),
+                "z": st.column_config.NumberColumn("z", format="%.4f", help="分数坐标 z"),
+            },
+            key="atom_editor"
         )
+        
         scaling = st.number_input("超胞扩展因子", min_value=1, value=1, step=1)
         save_cif = st.checkbox("保存为 CIF 文件", value=True)
 
@@ -731,30 +775,34 @@ def structure_builder_panel():
             st.error("请先初始化 Agent")
             return
 
-        if not elements_input or not coords_input:
-            st.warning("请输入元素符号和分数坐标")
+        # 从表格数据中提取元素和坐标
+        if atom_data.empty or atom_data["元素"].isna().all():
+            st.warning("请至少输入一个原子信息")
             return
 
         try:
-            elements = [e.strip() for e in elements_input.split(",") if e.strip()]
-            frac_coords = []
-            for line in coords_input.strip().split("\n"):
-                if line.strip():
-                    coords = [float(x.strip()) for x in line.split(",")]
-                    frac_coords.append(coords)
+            # 过滤掉空行
+            valid_data = atom_data.dropna(subset=["元素"])
+            elements = valid_data["元素"].tolist()
+            frac_coords = valid_data[["x", "y", "z"]].values.tolist()
 
             if not elements or not frac_coords:
                 st.warning("元素符号和分数坐标不能为空")
                 return
 
-            result = st.session_state.agent.build_structure(
-                a=a, b=b, c=c,
-                alpha=alpha, beta=beta, gamma=gamma,
-                elements=elements,
-                frac_coord=frac_coords,
-                scaling_matrix=scaling,
-                save_to_cif=save_cif
-            )
+            import json
+            # 通过 API 调用 (POST)
+            params = {
+                "a": a, "b": b, "c": c,
+                "alpha": alpha, "beta": beta, "gamma": gamma,
+                "elements": ",".join(elements),
+                "frac_coords": json.dumps(frac_coords),
+                "save_to_cif": save_cif
+            }
+            # 只在 scaling > 1 时添加 scaling_matrix
+            if scaling > 1:
+                params["scaling_matrix"] = scaling
+            result = call_agent_api("/structure/build", method="POST", params=params)
 
             if isinstance(result, dict):
                 if "error" in result:
