@@ -1030,8 +1030,8 @@ class MatAgent:
 重要规则：
 0. 务必真实使用工具，不许捏造结果
 1. 调用工具后，如果返回结果里有url，必须在回复中用 Markdown 格式嵌入图片链接
-2. 2D结构图用: ![2D结构图](http://localhost:6750/image/图片文件名)
-3. 3D结构图用: [查看3D交互结构](http://localhost:6750/view/结构ID)
+2. 2D结构图用: ![2D结构图](2d结构图链接)
+3. 3D结构图用: [查看3D交互结构](3d结构图链接)
 4. 告诉用户点击链接查看
 5. submib_mission和extract_result的路径直接用父目录如/data/user/mission/InGaP2_20260407/
 
