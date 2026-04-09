@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
 # LangChain 相关导入
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent as create_lc_agent
@@ -19,6 +19,31 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 
 # 加载环境变量
 load_dotenv()
+
+# 系统提示词 - 定义Agent的角色和行为
+# 优先从环境变量读取，否则使用默认提示词
+DEFAULT_SYSTEM_PROMPT = """你是 MatAgent，一位专业的材料科学AI助手。
+
+你的专长包括：
+1. 材料数据库查询（Materials Project(稳定)、OQMD(连接不太稳定)等）
+2. 晶体结构分析与可视化
+3. 材料性质预测（带隙、能带结构等）
+4. VASP计算任务管理
+
+回复风格：
+- 专业、准确、简洁
+- 使用中文回复用户
+- 对于技术问题，提供清晰的解释
+- 如果不确定，坦诚说明
+
+当使用工具时：
+- 理解用户需求后选择合适的工具
+- 解释工具返回的结果
+- 返回结果里有图片url的话请用md渲染
+- 如有必要，建议下一步操作
+"""
+
+SYSTEM_PROMPT = os.getenv("MATAGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT)
 
 
 class MatAgentMCP:
@@ -130,22 +155,56 @@ class MatAgentMCP:
             for tool in self.tools
         ]
         
-    async def chat(self, message: str, thread_id: Optional[str] = None) -> str:
-        """与 Agent 对话"""
+    async def chat(self, message: str, thread_id: Optional[str] = None) -> dict:
+        """与 Agent 对话，返回包含工具调用信息的结果"""
         if not self.agent:
             raise RuntimeError("Agent 未初始化，请先调用 connect()")
         
         config = {"configurable": {"thread_id": thread_id or "default"}}
+        
+        # 构建消息列表：系统提示词 + 用户消息
+        messages = [
+            SystemMessage(content=SYSTEM_PROMPT),
+            HumanMessage(content=message)
+        ]
+        
         response = await self.agent.ainvoke(
-            {"messages": [HumanMessage(content=message)]},
+            {"messages": messages},
             config=config
         )
         
-        messages = response.get("messages", [])
-        for msg in reversed(messages):
+        response_messages = response.get("messages", [])
+        
+        # 提取AI回复内容
+        ai_content = ""
+        for msg in reversed(response_messages):
             if isinstance(msg, AIMessage):
-                return msg.content
-        return "无响应"
+                ai_content = msg.content
+                break
+        
+        # 提取工具调用信息
+        tool_results = []
+        for msg in response_messages:
+            # 检查是否有工具调用
+            if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    tool_results.append({
+                        "tool_name": tc.get("name", "unknown"),
+                        "tool_args": tc.get("args", {}),
+                        "result": None  # 将在后续消息中填充
+                    })
+            # 检查工具返回结果
+            if hasattr(msg, 'name') and msg.name:
+                # 找到对应的工具调用并填充结果
+                for tr in tool_results:
+                    if tr["tool_name"] == msg.name and tr["result"] is None:
+                        tr["result"] = msg.content
+                        break
+        
+        return {
+            "message": ai_content if ai_content else "无响应",
+            "tool_results": tool_results
+        }
 
 
 class MatAgentMCPSync:
@@ -173,7 +232,16 @@ class MatAgentMCPSync:
             # 如果已经在事件循环中，使用 run_coroutine_threadsafe
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as pool:
-                future = pool.submit(asyncio.run, coro)
+                # 创建一个新的事件循环来运行协程
+                def run_in_new_loop():
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(coro)
+                    finally:
+                        new_loop.close()
+                
+                future = pool.submit(run_in_new_loop)
                 return future.result()
         except RuntimeError:
             # 没有运行的事件循环，直接使用 asyncio.run
@@ -191,11 +259,61 @@ class MatAgentMCPSync:
             self._run_async(self._async_agent.disconnect())
             self._connected = False
             
-    def chat(self, message: str, thread_id: Optional[str] = None) -> str:
-        """同步方式对话"""
+    def chat(self, message: str, thread_id: Optional[str] = None) -> dict:
+        """同步方式对话，返回包含工具调用信息的结果"""
         if not self._connected:
             self.connect()
         return self._run_async(self._async_agent.chat(message, thread_id))
+    
+    def invoke_tool(self, tool_name: str, **kwargs) -> Any:
+        """直接调用 MCP 工具（绕过 LLM，更快）"""
+        if not self._connected:
+            self.connect()
+        
+        # 查找工具（包装后的工具）
+        tool = None
+        for t in self._async_agent.tools:
+            if t.name == tool_name:
+                tool = t
+                break
+        
+        if tool is None:
+            available = [t.name for t in self._async_agent.tools]
+            raise ValueError(f"工具 '{tool_name}' 不存在。可用工具: {available}")
+        
+        # 直接调用工具
+        return self._run_async(tool.ainvoke(kwargs))
+    
+    def invoke_tool_raw(self, tool_name: str, **kwargs) -> Any:
+        """直接调用原始 MCP 工具，返回原始格式（不转换为字符串）"""
+        if not self._connected:
+            self.connect()
+        
+        # 通过 mcp_client 直接调用原始工具
+        async def _call_raw():
+            # 获取原始工具（未包装的）
+            raw_tools = await self._async_agent.mcp_client.get_tools()
+            target_tool = None
+            for t in raw_tools:
+                if t.name == tool_name:
+                    target_tool = t
+                    break
+            
+            if target_tool is None:
+                available = [t.name for t in raw_tools]
+                raise ValueError(f"工具 '{tool_name}' 不存在。可用工具: {available}")
+            
+            # 调用原始工具，获取原始返回格式
+            return await target_tool.ainvoke(kwargs)
+        
+        return self._run_async(_call_raw())
+    
+    def get_tool(self, tool_name: str) -> Optional[BaseTool]:
+        """获取工具实例"""
+        for t in self._async_agent.tools:
+            if t.name == tool_name:
+                return t
+        return None
     
     def __enter__(self):
         self.connect()

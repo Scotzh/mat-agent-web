@@ -76,10 +76,6 @@ PORT = config.get_port()
 USERNAME = config.get_username()
 PASSWORD = config.get_password()
 
-# ============ 文件服务器初始化 ============
-server = flask_server.MatFileServer(port=6760)
-crystalmanager = flask_server.MatFileServer(port=6750)
-
 # ============ 进程清理函数 ============
 def cleanup_child_processes():
     """在主进程退出时尝试优雅终止所有子进程并删除临时文件目录"""
@@ -118,7 +114,7 @@ signal.signal(signal.SIGTERM, _handle_exit)
 # ============ 工具函数 ============
 def get_plot_url(img_buffer: io.BytesIO) -> str:
     """获取图片的 URL"""
-    return server.add_image(img_buffer)
+    return matfileserver.add_image(img_buffer)
 
 
 def _create_error_image(error_message: str) -> io.BytesIO:
@@ -199,7 +195,7 @@ def visualize_structure(structure: Structure) -> str:
     html_path = os.path.join(temp_dir, f"{formula}_custom_3d.html")
     write(html_path, atoms, format='html')
 
-    url = crystalmanager.add_html_with_info(structure, html_path)
+    url = matfileserver.add_html_with_info(structure, html_path)
     return url
 
 
@@ -637,17 +633,29 @@ def extract_relax_info(task_directory: str, get_plot: bool = True, visualize: bo
                 result = vasp_task.extract_relax_info(task_directory)
                 if result:
                     break
-            if visualize:
-                structure_url = visualize_structure(result['structure'])
+            
+            # 从 CONTCAR 文件重新读取 Structure 对象用于可视化
+            structure = None
+            if result and "local_files" in result and "contcar" in result["local_files"]:
+                try:
+                    contcar_path = result["local_files"]["contcar"]
+                    structure = Structure.from_file(contcar_path)
+                except Exception as e:
+                    print(f"读取 CONTCAR 失败: {e}")
+            
+            if visualize and structure is not None:
+                structure_url = visualize_structure(structure)
                 result["3d_image_url"] = structure_url
-            if get_plot:
-                res = get_structure_plot(result['structure'])
+            if get_plot and structure is not None:
+                res = get_structure_plot(structure)
                 image = res["Image"]
                 result["error"] = res['error']
                 result["image_url"] = image
-            result.pop("structure")  
+            result.pop("structure", None)  
             return result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"error": str(e), "message": "提取任务结果失败"}
 
 
@@ -928,26 +936,30 @@ async def search_materials_from_mp(
         raise ValueError("API密钥未设置")
     try:
         with MPRester(API_KEY) as mpr:
-            criteria = {}
+            # 使用新的 API 格式: MPRester.materials.summary
+            search_kwargs = {}
+            
+            # 直接传递参数（新 API 支持这些参数）
             if elements:
-                criteria["elements"] = elements
+                search_kwargs["elements"] = elements
             if exclude_elements:
-                criteria["exclude_elements"] = exclude_elements
+                search_kwargs["exclude_elements"] = exclude_elements
             if chemsys:
-                criteria["chemsys"] = chemsys
+                search_kwargs["chemsys"] = chemsys
             if band_gap:
-                criteria["band_gap"] = band_gap
+                search_kwargs["band_gap"] = band_gap
             if num_elements:
-                criteria["num_elements"] = num_elements
+                search_kwargs["num_elements"] = num_elements
             if formula:
-                criteria["formula"] = formula
-                
-            results = mpr.summary.search(
-                **criteria,
-                fields=["material_id", "formula_pretty", "band_gap", "symmetry"],
-                chunk_size=chunk_size if chunk_size and chunk_size <= 1000 else 25,
-                num_chunks=1
-            )
+                search_kwargs["formula"] = formula
+            
+            # 设置返回字段和限制
+            search_kwargs["fields"] = ["material_id", "formula_pretty", "band_gap", "symmetry"]
+            # 新版本使用 _search 方法支持 chunk_size/num_chunks
+            # 或者使用 search 方法配合 chunk_size
+            chunk_sz = chunk_size if chunk_size else 25
+            
+            results = mpr.materials.summary.search(**search_kwargs, chunk_size=chunk_sz, num_chunks=1)
             print(f"查询到 {len(results)} 个材料")
         return [{
             "material_id": r.material_id,
@@ -956,6 +968,9 @@ async def search_materials_from_mp(
             "symmetry": r.symmetry,
         } for r in results]
     except Exception as e:
+        import traceback
+        print(f"[ERROR] search_materials_from_mp: {e}")
+        print(traceback.format_exc())
         return {"error": str(e), "message": "查询材料数据失败"}
 
 
@@ -1058,10 +1073,19 @@ async def get_material_structure_from_mp(
                 res = get_structure_plot(structure)
                 if not res["error"]:
                     image = res["Image"]
-                    return {"image_url": image, "structure_dict": structure_info, "message": message}
+                    return {
+                        "image_url": image, 
+                        "3d_image_url": structure_url,
+                        "structure_dict": structure_info, 
+                        "message": message
+                    }
                 else:
                     message.append(res["error"])
-                    return {"structure_dict": structure_info, "message": message}
+                    return {
+                        "3d_image_url": structure_url,
+                        "structure_dict": structure_info, 
+                        "message": message
+                    }
 
         return {"structure_dict": structure_info, "message": message}
     except Exception as e:
@@ -1116,7 +1140,8 @@ async def build_structure(
         gamma: 晶格角gamma（度）
         elements: 元素符号列表，如 ["Na", "Cl"]
         frac_coord: 分数坐标列表，如 [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]]
-        scaling_matrix: 超胞扩展因子，整数或3x3矩阵，默认1
+        scaling_matrix: 超胞，默认整数（int）：表示在 a, b, c 三个方向进行相同的扩胞。例如 scaling_matrix=2表示构建 2×2×2 的超胞。
+                    列表（list）：长度为 3 的列表，分别表示 a, b, c 方向的扩胞倍数。例如 scaling_matrix=[2, 1, 1]表示构建 2×1×1 的超胞。
         save_to_cif: 是否保存为CIF文件，默认False
         add_to_database: 数据库文件名，如添加则保存到该数据库
     
@@ -1274,7 +1299,7 @@ async def extract_file(file_path: str) -> dict:
     try:
         with connection as vasp_task:
             result = vasp_task.extract_file(file_path=file_path)
-            download_url = server.add_image_file(result["local_file"])
+            download_url = matfileserver.add_image_file(result["local_file"])
             result["download_url"] = download_url
             return result
     except Exception as e:
@@ -1547,9 +1572,7 @@ async def predict_band_gap(formula: str | list[str]) -> dict:
 if __name__ == "__main__":
     try:
         # 启动文件服务器
-        server = flask_server.MatFileServer(port=6760)
-        crystalmanager = flask_server.MatFileServer(port=6750)
-        
+        matfileserver = flask_server.MatFileServer()
         # 连接远程服务器
         connection = tryssh.VaspTaskInitializer(HOST, USERNAME, PASSWORD, PORT)
         for i in range(5):

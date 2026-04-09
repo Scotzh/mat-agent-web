@@ -7,7 +7,8 @@ class Config:
         load_dotenv()  # 加载环境变量
     
     def get_api_key(self) -> Optional[str]:
-        return os.getenv('mp_API_KEY')
+        # 优先使用 MP_API_KEY（新版本 mp-api 要求），其次使用 mp_API_KEY（旧版本兼容）
+        return os.getenv('MP_API_KEY') or os.getenv('mp_API_KEY')
     
     def get_ip(self) -> Optional[str]:
         return os.getenv('local_HOST')

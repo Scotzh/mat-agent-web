@@ -344,24 +344,26 @@ def search_materials_from_mp(
     
     try:
         with MPRester(API_KEY) as mpr:
-            criteria = {}
+            # 使用新的 API 格式: mpr.materials.summary.search
+            search_kwargs = {}
             if elements:
-                criteria["elements"] = elements
+                search_kwargs["elements"] = elements
             if exclude_elements:
-                criteria["exclude_elements"] = exclude_elements
+                search_kwargs["exclude_elements"] = exclude_elements
             if chemsys:
-                criteria["chemsys"] = chemsys
+                search_kwargs["chemsys"] = chemsys
             if band_gap:
-                criteria["band_gap"] = band_gap
+                search_kwargs["band_gap"] = band_gap
             if num_elements:
-                criteria["num_elements"] = num_elements
+                search_kwargs["num_elements"] = num_elements
             if formula:
-                criteria["formula"] = formula
+                search_kwargs["formula"] = formula
             
-            results = mpr.summary.search(
-                **criteria,
+            results = mpr.materials.summary.search(
+                **search_kwargs,
                 fields=["material_id", "formula_pretty", "band_gap", "symmetry"],
-                chunk_size=chunk_size
+                chunk_size=chunk_size,
+                num_chunks=1
             )
             
             return [{
@@ -371,6 +373,9 @@ def search_materials_from_mp(
                 "symmetry": r.symmetry
             } for r in results]
     except Exception as e:
+        import traceback
+        print(f"[ERROR] search_materials_from_mp: {e}")
+        print(traceback.format_exc())
         return {"error": str(e)}
 
 
@@ -1280,24 +1285,26 @@ class MatAgent:
                 return {"error": "API密钥未设置"}
             
             with MPRester(API_KEY) as mpr:
-                criteria = {}
+                # 使用新的 API 格式: mpr.materials.summary.search
+                search_kwargs = {}
                 if elements:
-                    criteria["elements"] = elements
+                    search_kwargs["elements"] = elements
                 if exclude_elements:
-                    criteria["exclude_elements"] = exclude_elements
+                    search_kwargs["exclude_elements"] = exclude_elements
                 if chemsys:
-                    criteria["chemsys"] = chemsys
+                    search_kwargs["chemsys"] = chemsys
                 if band_gap:
-                    criteria["band_gap"] = band_gap
+                    search_kwargs["band_gap"] = band_gap
                 if num_elements:
-                    criteria["num_elements"] = num_elements
+                    search_kwargs["num_elements"] = num_elements
                 if formula:
-                    criteria["formula"] = formula
+                    search_kwargs["formula"] = formula
                 
-                results = mpr.summary.search(
-                    **criteria,
+                results = mpr.materials.summary.search(
+                    **search_kwargs,
                     fields=["material_id", "formula_pretty", "band_gap", "symmetry"],
-                    num_chunks=chunk_size
+                    chunk_size=chunk_size,
+                    num_chunks=1
                 )
                 
                 return {"materials": [{
@@ -1307,6 +1314,9 @@ class MatAgent:
                     "symmetry": r.symmetry
                 } for r in results]}
         except Exception as e:
+            import traceback
+            print(f"[ERROR] search_materials: {e}")
+            print(traceback.format_exc())
             return {"error": str(e)}
     
     def get_material_structure(self, material_id, get_sites=False, get_plot=True, download=False) -> dict:
