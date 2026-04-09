@@ -38,9 +38,11 @@ DEFAULT_SYSTEM_PROMPT = """你是 MatAgent，一位专业的材料科学AI助手
 
 当使用工具时：
 - 理解用户需求后选择合适的工具
-- 解释工具返回的结果
-- 返回结果里有图片url的话请用md渲染
+- 解释工具返回的结果（用自己的话总结，不要重复原始JSON数据）
+- 返回结果里有图片url的话请用markdown格式渲染图片
 - 如有必要，建议下一步操作
+
+重要：不要在回复中包含工具返回的原始JSON文本或结构化数据。只提供对结果的简洁解释和解读。
 """
 
 SYSTEM_PROMPT = os.getenv("MATAGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT)
@@ -69,6 +71,7 @@ class MatAgentMCP:
             api_key=str(self.api_key),
             base_url=self.base_url,
             temperature=0.7,
+            streaming=True,  # 开启流式模式
         )
         
         self.agent = None
@@ -205,6 +208,142 @@ class MatAgentMCP:
             "message": ai_content if ai_content else "无响应",
             "tool_results": tool_results
         }
+    
+    async def chat_stream(self, message: str, thread_id: Optional[str] = None):
+        """
+        与 Agent 对话，以流式方式返回结果
+        生成器yield格式: {"type": "tool_start", "data": {...}} 或 {"type": "token", "data": "..."} 或 {"type": "tool_end", "data": {...}}
+        
+        使用 stream_mode="updates" 获取实时更新，包括工具调用和结果
+        """
+        if not self.agent:
+            raise RuntimeError("Agent 未初始化，请先调用 connect()")
+        
+        config = {"configurable": {"thread_id": thread_id or "default"}}
+        
+        # 构建消息列表：系统提示词 + 用户消息
+        messages = [
+            SystemMessage(content=SYSTEM_PROMPT),
+            HumanMessage(content=message)
+        ]
+        
+        tool_results: list[dict[str, Any]] = []
+        full_message = ""
+        pending_tool_calls: dict[str, dict[str, Any]] = {}  # 跟踪待完成的工具调用
+        
+        # 使用 stream_mode="updates" 获取实时更新
+        async for chunk in self.agent.astream(
+            {"messages": messages},
+            config=config,
+            stream_mode="updates"
+        ):
+            # chunk 是一个 dict，key 是节点名称，value 是节点输出
+            for node_name, node_output in chunk.items():
+                if not isinstance(node_output, dict):
+                    continue
+                
+                node_messages = node_output.get("messages", [])
+                if not node_messages:
+                    continue
+                
+                for msg in node_messages:
+                    # 处理 AI 消息（包含 token 和工具调用请求）
+                    if isinstance(msg, AIMessage):
+                        # 发送 token
+                        if hasattr(msg, 'content') and msg.content:
+                            content = msg.content
+                            if isinstance(content, str):
+                                full_message += content
+                                yield {"type": "token", "data": content}
+                        
+                        # 检测工具调用请求
+                        if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                            for tc in msg.tool_calls:
+                                tool_name = tc.get("name", "unknown")
+                                tool_args = tc.get("args", {})
+                                tool_id = tc.get("id") or tool_name
+                                
+                                tool_info: dict[str, Any] = {
+                                    "tool_name": tool_name,
+                                    "tool_args": tool_args,
+                                    "result": None
+                                }
+                                tool_results.append(tool_info)
+                                pending_tool_calls[tool_id] = tool_info
+                                yield {"type": "tool_start", "data": tool_info}
+                    
+                    # 处理工具返回结果
+                    elif hasattr(msg, 'name') and msg.name:
+                        tool_name = msg.name
+                        tool_content = msg.content if hasattr(msg, 'content') else None
+                        
+                        # 找到对应的工具调用并更新
+                        for tr in tool_results:
+                            if tr.get("tool_name") == tool_name and tr.get("result") is None:
+                                tr["result"] = tool_content
+                                yield {"type": "tool_end", "data": tr}
+                                break
+        
+        # 清理消息中的工具JSON内容
+        cleaned_message = self._clean_tool_json_from_message(full_message)
+        
+        # 发送最终完整消息
+        yield {"type": "complete", "data": {"message": cleaned_message, "tool_results": tool_results}}
+    
+    def _clean_tool_json_from_message(self, message: str) -> str:
+        """
+        清理消息中嵌入的工具JSON内容
+        移除类似 [[{"type": "text", "text": "{...}"}]] 这样的工具返回内容
+        """
+        import re
+        
+        cleaned = message
+        
+        # 模式1: 匹配 [[{"type": "text", "text": "...", "id": "..."}]]
+        # 使用非贪婪匹配和嵌套括号处理
+        pattern1 = r'\[\[\s*\{[^{}]*"type"\s*:\s*"text"[^{}]*\}\s*\]\]'
+        matches1 = list(re.finditer(pattern1, cleaned))
+        for match in reversed(matches1):  # 从后往前替换，避免位置偏移
+            matched_text = match.group(0)
+            # 检查是否包含工具返回的特征
+            if any(keyword in matched_text for keyword in ['"image_url"', '"3d_image_url"', '"structure_dict"', 
+                                                            '"formula"', '"band_gap"', '"material_id"']):
+                cleaned = cleaned[:match.start()] + cleaned[match.end():]
+        
+        # 模式2: 匹配 {"structured_content": {...}}
+        # 需要处理嵌套的大括号
+        def remove_structured_content(text: str) -> str:
+            result = text
+            pattern2 = r'\{\s*"structured_content"\s*:\s*\{'
+            for match in re.finditer(pattern2, result):
+                start = match.start()
+                # 找到匹配的结束括号
+                brace_count = 0
+                end = start
+                for i, char in enumerate(result[start:]):
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            end = start + i + 1
+                            break
+                if end > start:
+                    matched_text = result[start:end]
+                    if any(keyword in matched_text for keyword in ['"image_url"', '"3d_image_url"', 
+                                                                    '"structure_dict"', '"formula"']):
+                        result = result[:start] + result[end:]
+                        return remove_structured_content(result)  # 递归处理
+            return result
+        
+        cleaned = remove_structured_content(cleaned)
+        
+        # 清理多余的空行和空格
+        cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+        cleaned = re.sub(r'[ \t]+\n', '\n', cleaned)  # 移除行尾空格
+        cleaned = cleaned.strip()
+        
+        return cleaned
 
 
 class MatAgentMCPSync:

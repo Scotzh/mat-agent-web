@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import uvicorn
 
@@ -42,11 +43,18 @@ def _ensure_chat_table():
                 role VARCHAR,
                 content TEXT,
                 tool_results TEXT,
+                content_blocks TEXT,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_session_id ON chat_history(session_id)')
-        conn.commit()
+        
+        # 检查并添加 content_blocks 列（兼容旧表）
+        cursor = conn.execute("PRAGMA table_info(chat_history)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if 'content_blocks' not in columns:
+            conn.execute('ALTER TABLE chat_history ADD COLUMN content_blocks TEXT')
+            conn.commit()
     finally:
         conn.close()
 
@@ -72,16 +80,17 @@ def init_database():
     _ensure_session_table()
     print(f"✅ 数据库已初始化: {DB_PATH}")
 
-def add_chat_message(session_id: str, role: str, content: str, tool_results: list[dict] | None = None):
+def add_chat_message(session_id: str, role: str, content: str, tool_results: list[dict] | None = None, content_blocks: list[dict] | None = None):
     """添加聊天消息到数据库"""
     _ensure_chat_table()
     conn = sqlite3.connect(DB_PATH, timeout=30)
     try:
         tool_results_json = json.dumps(tool_results, ensure_ascii=False) if tool_results else None
+        content_blocks_json = json.dumps(content_blocks, ensure_ascii=False) if content_blocks else None
         conn.execute('''
-            INSERT INTO chat_history (session_id, role, content, tool_results)
-            VALUES (?, ?, ?, ?)
-        ''', (session_id, role, content, tool_results_json))
+            INSERT INTO chat_history (session_id, role, content, tool_results, content_blocks)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (session_id, role, content, tool_results_json, content_blocks_json))
         conn.commit()
     finally:
         conn.close()
@@ -92,7 +101,7 @@ def get_chat_history(session_id: str, limit: int = 50) -> list[dict[str, Any]]:
     conn = sqlite3.connect(DB_PATH, timeout=30)
     try:
         results = conn.execute('''
-            SELECT role, content, tool_results, timestamp 
+            SELECT role, content, tool_results, content_blocks, timestamp 
             FROM chat_history 
             WHERE session_id = ?
             ORDER BY timestamp ASC
@@ -103,7 +112,8 @@ def get_chat_history(session_id: str, limit: int = 50) -> list[dict[str, Any]]:
                 "role": r[0], 
                 "content": r[1], 
                 "tool_results": json.loads(r[2]) if r[2] else None,
-                "timestamp": r[3]
+                "content_blocks": json.loads(r[3]) if r[3] else None,
+                "timestamp": r[4]
             } 
             for r in results
         ]
@@ -262,7 +272,19 @@ class ChatResponse(BaseModel):
     message: str
     tool_results: list[dict[str, Any]] | None = None
     duration: int | None = None
+
+
+class UpdateMessageRequest(BaseModel):
+    content_blocks: list[dict[str, Any]]
+    duration: int | None = None
     error: str | None = None
+
+
+class AddMessageRequest(BaseModel):
+    role: str
+    content: str
+    tool_results: list[dict[str, Any]] | None = None
+    content_blocks: list[dict[str, Any]] | None = None
 
 
 class HealthResponse(BaseModel):
@@ -385,6 +407,93 @@ async def chat(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """
+    流式对话接口 - 使用 SSE 格式返回流式响应
+    支持持久化记忆和工具调用记录
+    """
+    agent = get_agent()
+    session_id = request.session_id
+    
+    async def generate_stream():
+        """生成 SSE 流"""
+        start_time = time.time()
+        full_message: str = ""
+        tool_results: list[dict[str, Any]] = []
+        
+        try:
+            # 1. 加载历史对话上下文
+            history = get_chat_history(session_id, limit=20)
+            
+            # 2. 构建带上下文的查询（如果有历史记录）
+            if history and len(history) > 0:
+                context_parts = []
+                for msg in history[-10:]:
+                    role_prefix = "用户" if msg["role"] == "user" else "助手"
+                    context_parts.append(f"{role_prefix}: {msg['content']}")
+                
+                context_str = "\n".join(context_parts)
+                enhanced_message = f"以下是我们之前的对话:\n{context_str}\n\n用户当前问题: {request.message}\n\n请根据上下文回答。"
+            else:
+                enhanced_message = request.message
+            
+            # 3. 使用流式方法
+            async for event in agent._async_agent.chat_stream(enhanced_message, session_id):
+                # 发送事件
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                
+                # 收集完整消息和工具结果
+                event_type = event.get("type")
+                event_data = event.get("data")
+                
+                if event_type == "token" and isinstance(event_data, str):
+                    full_message += event_data
+                elif event_type == "tool_start" and isinstance(event_data, dict):
+                    tool_results.append(event_data)
+                elif event_type == "tool_end" and isinstance(event_data, dict):
+                    # 更新工具结果
+                    for tr in tool_results:
+                        if tr.get("tool_name") == event_data.get("tool_name") and tr.get("result") is None:
+                            tr["result"] = event_data.get("result")
+                            break
+                elif event_type == "complete" and isinstance(event_data, dict):
+                    full_message = str(event_data.get("message", full_message))
+                    tool_results_from_event = event_data.get("tool_results")
+                    if isinstance(tool_results_from_event, list):
+                        tool_results = tool_results_from_event
+            
+            # 4. 计算耗时
+            duration = int((time.time() - start_time) * 1000)
+            
+            # 5. 发送完成事件（包含完整消息和工具结果，让前端保存）
+            yield f"data: {json.dumps({'type': 'done', 'data': {'duration': duration, 'message': full_message, 'tool_results': tool_results}}, ensure_ascii=False)}\n\n"
+
+            # 6. 更新会话状态
+            _sessions[session_id] = {
+                "last_active": datetime.now().isoformat(),
+                "message_count": len(history) + 2
+            }
+            
+            # 8. 如果是新会话，自动生成会话名称
+            if len(history) == 0 and request.message:
+                session_name = request.message[:30] + "..." if len(request.message) > 30 else request.message
+                update_session_name(session_id, session_name)
+                
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'data': str(e)}, ensure_ascii=False)}\n\n"
+    
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"  # 禁用 Nginx 缓冲
+        }
+    )
+
+
 @app.get("/tools")
 async def list_tools():
     """列出所有可用工具"""
@@ -444,6 +553,56 @@ async def api_clear_all_sessions():
     clear_all_sessions()
     _sessions.clear()
     return {"status": "all_cleared"}
+
+
+def update_message_content_blocks(session_id: str, content_blocks: list[dict]):
+    """更新消息的内容块信息（用于保存工具调用位置）"""
+    _ensure_chat_table()
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    try:
+        content_blocks_json = json.dumps(content_blocks, ensure_ascii=False)
+        # 找到该会话最新的助手消息并更新
+        conn.execute('''
+            UPDATE chat_history 
+            SET content_blocks = ?
+            WHERE ID = (
+                SELECT MAX(ID) FROM chat_history 
+                WHERE session_id = ? AND role = 'assistant'
+            )
+        ''', (content_blocks_json, session_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+@app.post("/sessions/{session_id}/messages/update-blocks")
+async def api_update_message_blocks(session_id: str, request: UpdateMessageRequest):
+    """更新会话消息的内容块信息"""
+    # 获取该会话最新的助手消息
+    history = get_chat_history(session_id, limit=1)
+    if not history:
+        raise HTTPException(status_code=404, detail="No messages found")
+
+    last_message = history[-1]
+    if last_message["role"] != "assistant":
+        raise HTTPException(status_code=400, detail="Last message is not from assistant")
+
+    # 更新内容块
+    update_message_content_blocks(session_id, request.content_blocks)
+    return {"status": "success", "session_id": session_id}
+
+
+@app.post("/sessions/{session_id}/messages")
+async def api_add_message(session_id: str, request: AddMessageRequest):
+    """添加消息到会话"""
+    add_chat_message(
+        session_id=session_id,
+        role=request.role,
+        content=request.content,
+        tool_results=request.tool_results,
+        content_blocks=request.content_blocks
+    )
+    return {"status": "success", "session_id": session_id}
 
 
 # ========== 统一工具调用处理函数 ==========

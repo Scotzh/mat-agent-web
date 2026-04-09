@@ -30,11 +30,12 @@ import databasemanage
 if "db" not in st.session_state:
     st.session_state.db = databasemanage.DatabaseManager("matagent.db")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
+    st.session_state.messages = []
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 if "mcp_connected" not in st.session_state:
     st.session_state.mcp_connected = False
@@ -232,7 +233,7 @@ def safe_json_loads(text: str, default: Any = None) -> Any:
         return default if default is not None else text
 
 def chat_with_mcp(message: str) -> dict:
-    """通过 MCP 与 Agent 对话"""
+    """通过 MCP 与 Agent 对话（非流式）"""
     try:
         response = requests.post(
             f"{MCP_AGENT_URL}/chat",
@@ -245,6 +246,73 @@ def chat_with_mcp(message: str) -> dict:
         return {"type": "error", "message": "请求超时，请稍后重试"}
     except Exception as e:
         return {"type": "error", "message": f"请求失败: {str(e)}"}
+
+
+def chat_with_mcp_stream(message: str):
+    """
+    通过 MCP 与 Agent 进行流式对话
+    生成器yield格式: (event_type, data)
+    """
+    try:
+        response = requests.post(
+            f"{MCP_AGENT_URL}/chat/stream",
+            json={"session_id": st.session_state.session_id, "message": message},
+            stream=True,
+            timeout=300
+        )
+        response.raise_for_status()
+        
+        for line in response.iter_lines():
+            if line:
+                line = line.decode('utf-8')
+                # SSE 格式: data: {...}
+                if line.startswith('data: '):
+                    try:
+                        event = json.loads(line[6:])  # 去掉 "data: " 前缀
+                        yield event
+                    except json.JSONDecodeError:
+                        continue
+    except requests.exceptions.Timeout:
+        yield {"type": "error", "data": "请求超时，请稍后重试"}
+    except Exception as e:
+        yield {"type": "error", "data": f"请求失败: {str(e)}"}
+
+def update_message_blocks(session_id: str, content_blocks: list[dict]) -> bool:
+    """更新消息的内容块信息到服务器"""
+    try:
+        response = requests.post(
+            f"{MCP_AGENT_URL}/sessions/{session_id}/messages/update-blocks",
+            json={"content_blocks": content_blocks},
+            timeout=10
+        )
+        if response.status_code != 200:
+            print(f"更新 content_blocks 失败: {response.status_code} - {response.text}")
+        return response.status_code == 200
+    except Exception as e:
+        print(f"更新 content_blocks 异常: {e}")
+        return False
+
+
+def add_chat_message_via_api(session_id: str, role: str, content: str, tool_results: list = None, content_blocks: list = None) -> bool:
+    """通过API添加聊天消息到服务器数据库"""
+    try:
+        response = requests.post(
+            f"{MCP_AGENT_URL}/sessions/{session_id}/messages",
+            json={
+                "role": role,
+                "content": content,
+                "tool_results": tool_results,
+                "content_blocks": content_blocks
+            },
+            timeout=10
+        )
+        if response.status_code != 200:
+            print(f"添加消息失败: {response.status_code} - {response.text}")
+        return response.status_code == 200
+    except Exception as e:
+        print(f"添加消息异常: {e}")
+        return False
+
 
 def predict_bandgap(formula: str) -> dict:
     """预测带隙"""
@@ -303,7 +371,16 @@ def load_session_history(session_id: str):
         response = requests.get(f"{MCP_AGENT_URL}/sessions/{session_id}/history", timeout=5)
         if response.status_code == 200:
             data = response.json()
-            return data.get("messages", [])
+            messages = data.get("messages", [])
+            # 调试输出
+            for msg in messages:
+                if msg.get("content_blocks"):
+                    print(f"加载消息包含 content_blocks: {len(msg['content_blocks'])} 个块")
+                else:
+                    print(f"加载消息不包含 content_blocks")
+            return messages
+        else:
+            print(f"加载会话历史失败: {response.status_code}")
     except Exception as e:
         print(f"加载会话历史失败: {e}")
     return []
@@ -364,6 +441,12 @@ def sidebar():
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🆕 新建会话", use_container_width=True):
+                # 清除当前会话的 history_loaded 标记
+                old_session_id = st.session_state.get("session_id")
+                if old_session_id:
+                    old_key = f"history_loaded_{old_session_id}"
+                    if old_key in st.session_state:
+                        del st.session_state[old_key]
                 st.session_state.session_id = str(uuid.uuid4())
                 st.session_state.messages = []
                 # 清除编辑状态
@@ -420,9 +503,16 @@ def sidebar():
                                     # 从服务器加载历史消息
                                     history = load_session_history(session_id)
                                     st.session_state.messages = [
-                                        {"role": msg["role"], "content": msg["content"], "tool_results": msg.get("tool_results")}
+                                        {
+                                            "role": msg["role"],
+                                            "content": msg["content"],
+                                            "tool_results": msg.get("tool_results"),
+                                            "content_blocks": msg.get("content_blocks")
+                                        }
                                         for msg in history
                                     ]
+                                    # 标记已加载，避免 chat_page() 重复加载
+                                    st.session_state[f"history_loaded_{session_id}"] = True
                                     st.rerun()
                             
                             with cols[1]:
@@ -437,6 +527,10 @@ def sidebar():
                                     if delete_session(session_id):
                                         # 如果删除的是当前会话，重置会话
                                         if session_id == st.session_state.session_id:
+                                            # 清除 history_loaded 标记
+                                            old_key = f"history_loaded_{session_id}"
+                                            if old_key in st.session_state:
+                                                del st.session_state[old_key]
                                             st.session_state.session_id = str(uuid.uuid4())
                                             st.session_state.messages = []
                                         st.success("已删除")
@@ -504,6 +598,15 @@ def display_tool_result(tr: dict):
         # 显示工具返回结果
         st.markdown("**📤 返回结果:**")
         
+        # 如果结果是字符串，尝试解析为JSON
+        if isinstance(result, str):
+            try:
+                parsed = json.loads(result)
+                if isinstance(parsed, dict):
+                    result = parsed
+            except json.JSONDecodeError:
+                pass
+        
         if isinstance(result, dict):
             # 处理图片URL
             img_url = result.get("2d_image_url") or result.get("image_url") or result.get("image")
@@ -541,6 +644,8 @@ def display_tool_result(tr: dict):
                                      "image_url", "image", "cif_path"]}
             if json_data:
                 st.json(json_data)
+        elif result is None:
+            st.markdown("*等待结果...*")
         else:
             # 非字典结果直接显示
             st.code(str(result))
@@ -554,15 +659,50 @@ def chat_page():
         st.warning("⚠️ MCP 服务未连接，请确保 agent_mcp_server.py 已启动")
         return
     
+    # 首次加载时从服务器获取历史消息
+    # 使用 session_id 作为 key 的一部分，确保切换会话时重新加载
+    history_key = f"history_loaded_{st.session_state.session_id}"
+    if history_key not in st.session_state:
+        st.session_state[history_key] = True
+        try:
+            print(f"页面加载: 尝试加载会话 {st.session_state.session_id} 的历史消息")
+            history = load_session_history(st.session_state.session_id)
+            print(f"页面加载: 加载到 {len(history)} 条消息")
+            if history:
+                st.session_state.messages = [
+                    {
+                        "role": msg["role"],
+                        "content": msg["content"],
+                        "tool_results": msg.get("tool_results"),
+                        "content_blocks": msg.get("content_blocks")
+                    }
+                    for msg in history
+                ]
+                print(f"页面加载: 已设置 session_state.messages，共 {len(st.session_state.messages)} 条")
+        except Exception as e:
+            print(f"页面加载: 加载历史消息失败: {e}")
+    
     # 显示历史消息（包含工具调用）
-    for msg in st.session_state.messages:
+    print(f"渲染消息: 共 {len(st.session_state.messages)} 条消息")
+    for i, msg in enumerate(st.session_state.messages):
+        print(f"  消息 {i}: role={msg['role']}, content_len={len(msg.get('content', ''))}, has_blocks={bool(msg.get('content_blocks'))}")
         with st.chat_message(msg["role"]):
-            # 先显示工具调用（如果有）
-            if msg.get("tool_results"):
-                for tr in msg["tool_results"]:
-                    display_tool_result(tr)
-            # 再显示消息内容
-            st.markdown(msg["content"])
+            # 如果有内容块（包含工具调用位置信息），按顺序渲染
+            if msg.get("content_blocks"):
+                print(f"  消息 {i}: 有 {len(msg['content_blocks'])} 个 content_blocks")
+                for j, block in enumerate(msg["content_blocks"]):
+                    print(f"    块 {j}: type={block.get('type')}")
+                    if block["type"] == "text":
+                        st.markdown(block["content"])
+                    elif block["type"] == "tool":
+                        display_tool_result(block["data"])
+            else:
+                print(f"  消息 {i}: 没有 content_blocks，使用兼容模式")
+                # 兼容旧格式：先显示工具调用，再显示消息内容
+                if msg.get("tool_results"):
+                    for tr in msg["tool_results"]:
+                        display_tool_result(tr)
+                st.markdown(msg["content"])
     
     # 输入框
     if prompt := st.chat_input("描述您的材料科学问题..."):
@@ -571,39 +711,174 @@ def chat_page():
         with st.chat_message("user"):
             st.markdown(prompt)
         
-        # 调用 Agent
+        # 调用 Agent（流式）
         with st.chat_message("assistant"):
-            with st.spinner("AI正在思考中..."):
-                result = chat_with_mcp(prompt)
+            # 创建占位符列表，按顺序存储文本和工具框
+            content_placeholders: list[Any] = []  # 存储文本和工具框的占位符信息
+            caption_placeholder = st.empty()
+            
+            full_message: str = ""
+            tool_results: list[dict[str, Any]] = []
+            duration: int = 0
+            
+            # 当前文本的占位符
+            current_text_placeholder = st.empty()
+            current_text = ""
+            
+            # 流式接收响应
+            last_update_time = time.time()
+            is_tool_running = False  # 标记是否正在执行工具
+            
+            for event in chat_with_mcp_stream(prompt):
+                event_type = event.get("type")
+                data = event.get("data")
                 
-                message = result.get("message", "无响应")
-                duration = result.get("duration", 0)
-                tool_results = result.get("tool_results", [])
-                
-                # 显示工具调用框（实时）
-                if tool_results:
-                    for tr in tool_results:
-                        display_tool_result(tr)
-                
-                # 显示响应
-                st.markdown(message)
-                if duration:
-                    st.caption(f"⏱️ 响应时间: {duration}ms")
-                
-                # 保存消息到session_state
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": message,
-                    "tool_results": tool_results
+                if event_type == "token" and isinstance(data, str):
+                    # 如果正在执行工具，不累积 token（这些是工具返回的 JSON，不是回复）
+                    if is_tool_running:
+                        continue
+                    # 后端发送的是单个 token，需要累积
+                    full_message += data
+                    current_text += data
+                    # 每50ms更新一次显示，减少闪烁
+                    current_time = time.time()
+                    if current_time - last_update_time > 0.05:
+                        current_text_placeholder.markdown(current_text + "▌")
+                        last_update_time = current_time
+                    
+                elif event_type == "tool_start" and isinstance(data, dict):
+                    # 标记工具开始执行
+                    is_tool_running = True
+                    
+                    # 保存当前文本占位符到列表（去掉光标）
+                    if current_text:
+                        current_text_placeholder.markdown(current_text)
+                        content_placeholders.append({
+                            "type": "text",
+                            "placeholder": current_text_placeholder,
+                            "content": current_text
+                        })
+                    
+                    # 创建新的工具占位符（在当前位置）
+                    tool_name = data.get("tool_name", "未知工具")
+                    tool_placeholder = st.empty()
+                    with tool_placeholder.container():
+                        with st.expander(f"🔧 {tool_name}", expanded=True):
+                            st.markdown("*正在执行...*")
+                            if data.get("tool_args"):
+                                st.markdown("**📥 输入参数:**")
+                                st.json(data["tool_args"])
+                    
+                    content_placeholders.append({
+                        "type": "tool",
+                        "placeholder": tool_placeholder,
+                        "data": data,
+                        "status": "running"
+                    })
+                    tool_results.append(data)
+                    
+                    # 创建新的文本占位符用于后续内容
+                    current_text = ""
+                    current_text_placeholder = st.empty()
+                    
+                elif event_type == "tool_end" and isinstance(data, dict):
+                    # 工具调用完成，更新对应工具框
+                    tool_name = data.get("tool_name")
+                    for item in content_placeholders:
+                        if (item.get("type") == "tool" and 
+                            item.get("data", {}).get("tool_name") == tool_name and
+                            item.get("status") == "running"):
+                            # 更新工具框显示结果
+                            tool_placeholder = item["placeholder"]
+                            tool_data = item["data"].copy()
+                            tool_data["result"] = data.get("result")
+                            
+                            tool_placeholder.empty()
+                            with tool_placeholder.container():
+                                display_tool_result(tool_data)
+                            
+                            # 更新状态
+                            item["status"] = "completed"
+                            item["data"] = tool_data
+                            break
+                    
+                    # 重置工具运行标记
+                    is_tool_running = False
+                    
+                elif event_type == "complete" and isinstance(data, dict):
+                    # 流结束，使用后端返回的完整消息（已清理工具JSON）
+                    full_message = data.get("message", full_message)
+                    duration = data.get("duration", 0)
+                    
+                elif event_type == "done" and isinstance(data, dict):
+                    # 兼容旧格式的流结束事件
+                    duration = data.get("duration", 0)
+                    
+                elif event_type == "error":
+                    # 错误
+                    error_msg = str(data) if data else "未知错误"
+                    full_message += f"\n\n❌ 错误: {error_msg}"
+                    current_text += f"\n\n❌ 错误: {error_msg}"
+                    break
+            
+            # 保存最后的文本
+            if current_text:
+                current_text_placeholder.markdown(current_text)
+                content_placeholders.append({
+                    "type": "text",
+                    "placeholder": current_text_placeholder,
+                    "content": current_text
                 })
-                
-                # 保存到本地数据库（作为备份）
-                databasemanage.add_chat_message(
-                    st.session_state.session_id, "user", prompt
-                )
-                databasemanage.add_chat_message(
-                    st.session_state.session_id, "assistant", message, tool_results
-                )
+            elif not content_placeholders:
+                # 如果没有内容，显示空消息
+                current_text_placeholder.markdown(full_message)
+                content_placeholders.append({
+                    "type": "text",
+                    "placeholder": current_text_placeholder,
+                    "content": full_message
+                })
+            
+            if duration:
+                caption_placeholder.caption(f"⏱️ 响应时间: {duration}ms")
+            
+            # 构建 content_blocks 用于历史记录（移除 placeholder 对象，只保留可序列化的数据）
+            content_blocks_for_history = []
+            for block in content_placeholders:
+                if block["type"] == "text":
+                    content_blocks_for_history.append({
+                        "type": "text",
+                        "content": block["content"]
+                    })
+                elif block["type"] == "tool":
+                    # 只提取可序列化的字段
+                    tool_data = block["data"]
+                    serializable_data = {
+                        "tool_name": tool_data.get("tool_name"),
+                        "tool_args": tool_data.get("tool_args"),
+                        "result": tool_data.get("result")
+                    }
+                    content_blocks_for_history.append({
+                        "type": "tool",
+                        "data": serializable_data
+                    })
+            
+            # 保存消息到session_state（包含内容块顺序信息）
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": full_message,
+                "tool_results": tool_results,
+                "content_blocks": content_blocks_for_history
+            })
+            
+            # 通过API保存到服务器数据库（确保前后端数据一致）
+            add_chat_message_via_api(
+                st.session_state.session_id, "user", prompt
+            )
+            add_chat_message_via_api(
+                st.session_state.session_id, "assistant", full_message, 
+                tool_results=tool_results,
+                content_blocks=content_blocks_for_history
+            )
 
 def material_search_page():
     st.markdown('<h1 class="main-title">🔍 材料查询</h1>', unsafe_allow_html=True)
