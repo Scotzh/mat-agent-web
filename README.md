@@ -42,12 +42,14 @@ git clone <repository-url>
 cd mat-agent-mcp
 
 # 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
+# 推荐使用uv
+uv sync
+# python -m venv venv
+# source venv/bin/activate  # Linux/Mac
 # 或 venv\Scripts\activate  # Windows
 
 # 安装依赖
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 ```
 
 ### 2. 配置环境变量
@@ -74,27 +76,12 @@ base_dir=/path/to/vasp/tasks
 
 ### 3. 启动服务
 
-**方式一：一键启动（推荐）**
-
-```bash
-# 启动 Flask 文件服务器（2D/3D 可视化）
-python flask_server.py
-
-# 启动 MCP Agent Server（新终端）
-python agent_mcp_server.py
-
-# 启动 Web 界面（新终端）
-streamlit run web_mcp_app.py
-```
-
-**方式二：使用 MCP 协议启动**
-
 ```bash
 # 启动 MCP Server
-python mcp_server.py
+uv run mcp_server.py
 
 # 启动 Agent Server
-python agent_mcp_server.py
+uv run agent_mcp_server.py
 
 # 启动 Web
 streamlit run web_mcp_app.py
@@ -104,7 +91,8 @@ streamlit run web_mcp_app.py
 
 - Web 界面: http://localhost:8501
 - Agent API: http://localhost:8766
-- Flask 文件服务: http://localhost:5001
+- MCP 服务器: http://localhost:8000
+- Flask 文件服务: http://localhost:6750
 
 ## 📁 项目结构
 
