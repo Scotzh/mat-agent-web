@@ -1,9 +1,7 @@
 # MatAgent - 材料科学智能设计平台
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![MCP](https://img.shields.io/badge/MCP-Protocol-green)](https://modelcontextprotocol.io/)
+![alt text](assets/logo.png)
+
 
 MatAgent 是一个基于 **MCP (Model Context Protocol)** 协议的材料科学智能助手，集成了材料数据库查询、晶体结构分析、机器学习预测和 VASP 计算任务管理等功能。
 
@@ -164,6 +162,7 @@ MCP 协议工具服务器，提供：
 - `vasp_create_task` - 创建 VASP 任务
 - `vasp_submit` - 提交计算任务
 - `vasp_extract` - 提取计算结果
+- 及其他的工具
 
 ## 🎨 自定义配置
 
@@ -267,13 +266,25 @@ POST /vasp/submit
 
 ## 🙏 致谢
 
-- [LangChain](https://github.com/langchain-ai/langchain) - LLM 应用框架
-- [LangChain MCP Adapters](https://github.com/langchain-ai/langchain-mcp-adapters) - MCP 官方适配器
-- [FastMCP](https://github.com/jlowin/fastmcp) - MCP Python SDK
-- [Streamlit](https://streamlit.io/) - Web 应用框架
-- [Pymatgen](https://pymatgen.org/) - 材料分析库
-- [Materials Project](https://materialsproject.org/) - 材料数据库
+### 🧠 AI 与 LLM 框架
+- **[LangChain](https://github.com/langchain-ai/langchain)** - LLM 应用开发框架
+- **[LangChain MCP Adapters](https://github.com/langchain-ai/langchain-mcp-adapters)** - Model Context Protocol 的官方适配器
+- **[FastMCP](https://github.com/jlowin/fastmcp)** - Model Context Protocol 的 Python 框架
 
+### 🌐 Web 应用框架
+- **[Streamlit](https://streamlit.io/)** - 构建数据驱动 Web 应用的开源 Python 框架
+
+### 🧪 材料科学计算
+- **[Pymatgen](https://pymatgen.org/)** - 强大的开源 Python 材料分析库
+- **[ASE](https://ase-lib.org/)** - 原子模拟环境
+- **[Materials Project](https://materialsproject.org/)** - 开源材料数据库
+- **[OQMD](https://oqmd.org/)** - 开放量子材料数据库
+
+### 📊 补充工具与框架
+- **NumPy** - Python 科学计算的基础库
+- **Pandas** - 数据分析和操作工具
+- **Matplotlib** - Python 绘图库
+- **Plotly** - 交互式可视化库
 ---
 
 <p align="center">
