@@ -1,0 +1,17 @@
+[theme]
+# 主色调（Primary buttons, active elements）- 蓝色
+primaryColor = "#3B82F6"
+
+# 背景色
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8F9FA"
+
+# 文字颜色
+textColor = "#1F2937"
+
+# 字体
+font = "sans-serif"
+
+[theme.button]
+# 按钮圆角
+borderRadius = 8

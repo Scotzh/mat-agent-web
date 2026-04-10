@@ -94,17 +94,42 @@ Python 版本: **3.13.4** (pyproject.toml 要求)
 mat-agent-web/
 ├── web_mcp_app.py              # Streamlit Web 应用 (端口 8501)
 ├── agent_mcp_server.py         # FastAPI Agent 服务 (端口 8766)
+├── mcp_server.py               # MCP 工具服务器 (端口 8000)
+├── oqmd.py                     # OQMD 数据库查询
 ├── agent/
 │   └── langchain_mcp_agent.py  # LangChain MCP Agent 核心
-├── mcp_server.py               # MCP 工具服务器 (端口 8000)
-├── flask_server.py             # 文件服务 (端口 6750)
-├── databasemanage.py           # SQLite 数据库
-├── tryssh.py                   # SSH/VASP 远程操作
 ├── myml/                       # 机器学习模型
-├── temp_images/                # 2D 结构图缓存
-├── temp_3d/                    # 3D 可视化 HTML 缓存
-└── .streamlit/config.toml      # Streamlit 配置
+├── config/                     # 配置文件
+│   ├── loadenv.py
+│   ├── pyproject.toml
+│   └── requirements.txt
+├── db/                        # 数据库
+│   ├── databasemanage.py
+│   └── *.db
+├── cache/                     # 缓存/输出
+│   ├── temp_images/
+│   ├── temp_3d/
+│   └── structure_info.json
+├── server/                    # 后端服务
+│   ├── flask_server.py
+│   └── tryssh.py
+└── web/
+    └── assets/               # Web 静态资源
 ```
+
+## CHANGELOG 维护
+
+每次完成对项目的重大改动后，更新 `CHANGELOG.md`。以下情况需要记录：
+- 新增/删除/重命名核心文件
+- 重要功能变更（如新增模块、API 接口变化）
+- 配置文件结构变化
+- 依赖或构建方式变化
+
+以下情况无需记录：
+- 小的 bugfix
+- 代码风格调整
+- 注释/文档更新
+- 临时调试代码
 
 ## 参考
 

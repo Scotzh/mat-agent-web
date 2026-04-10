@@ -1,4 +1,4 @@
-.env
+config/.env
 .venv/
 .vscode/
 .python-version
@@ -18,3 +18,6 @@ instance/
 .codebuddy/
 structure_info.json
 matagent_server_history.db
+db/
+cache/
+server/
