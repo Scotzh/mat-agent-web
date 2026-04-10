@@ -40,6 +40,9 @@ if "messages" not in st.session_state:
 if "mcp_connected" not in st.session_state:
     st.session_state.mcp_connected = False
 
+if "selected_model" not in st.session_state:
+    st.session_state.selected_model = "deepseek-chat"
+
 # ============ 自定义样式 ============
 st.markdown("""
 <style>
@@ -142,6 +145,17 @@ st.markdown("""
         border-radius: 8px 8px 0 0;
         padding: 10px 20px;
         font-weight: 600;
+    }
+    
+    /* 为固定输入框腾出空间 */
+    .main .block-container {
+        padding-bottom: 100px !important;
+    }
+    
+    /* 隐藏默认的chat input容器边距 */
+    .stChatInputContainer {
+        margin: 0 !important;
+        padding: 0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -248,7 +262,7 @@ def chat_with_mcp(message: str) -> dict:
         return {"type": "error", "message": f"请求失败: {str(e)}"}
 
 
-def chat_with_mcp_stream(message: str):
+def chat_with_mcp_stream(message: str, model: str = "deepseek-chat"):
     """
     通过 MCP 与 Agent 进行流式对话
     生成器yield格式: (event_type, data)
@@ -256,7 +270,11 @@ def chat_with_mcp_stream(message: str):
     try:
         response = requests.post(
             f"{MCP_AGENT_URL}/chat/stream",
-            json={"session_id": st.session_state.session_id, "message": message},
+            json={
+                "session_id": st.session_state.session_id,
+                "message": message,
+                "model": model
+            },
             stream=True,
             timeout=300
         )
@@ -293,17 +311,23 @@ def update_message_blocks(session_id: str, content_blocks: list[dict]) -> bool:
         return False
 
 
-def add_chat_message_via_api(session_id: str, role: str, content: str, tool_results: list = None, content_blocks: list = None) -> bool:
+def add_chat_message_via_api(session_id: str, role: str, content: str, tool_results: list = None, content_blocks: list = None, model: str = None, duration: int = None) -> bool:
     """通过API添加聊天消息到服务器数据库"""
     try:
+        payload = {
+            "role": role,
+            "content": content,
+            "tool_results": tool_results,
+            "content_blocks": content_blocks
+        }
+        if model is not None:
+            payload["model"] = model
+        if duration is not None:
+            payload["duration"] = duration
+        
         response = requests.post(
             f"{MCP_AGENT_URL}/sessions/{session_id}/messages",
-            json={
-                "role": role,
-                "content": content,
-                "tool_results": tool_results,
-                "content_blocks": content_blocks
-            },
+            json=payload,
             timeout=10
         )
         if response.status_code != 200:
@@ -507,7 +531,9 @@ def sidebar():
                                             "role": msg["role"],
                                             "content": msg["content"],
                                             "tool_results": msg.get("tool_results"),
-                                            "content_blocks": msg.get("content_blocks")
+                                            "content_blocks": msg.get("content_blocks"),
+                                            "model": msg.get("model"),
+                                            "duration": msg.get("duration")
                                         }
                                         for msg in history
                                     ]
@@ -674,7 +700,9 @@ def chat_page():
                         "role": msg["role"],
                         "content": msg["content"],
                         "tool_results": msg.get("tool_results"),
-                        "content_blocks": msg.get("content_blocks")
+                        "content_blocks": msg.get("content_blocks"),
+                        "model": msg.get("model"),
+                        "duration": msg.get("duration")
                     }
                     for msg in history
                 ]
@@ -703,9 +731,30 @@ def chat_page():
                     for tr in msg["tool_results"]:
                         display_tool_result(tr)
                 st.markdown(msg["content"])
+            
+            # 显示模型和响应时间信息（如果有）
+            if msg.get("model") and msg.get("duration"):
+                st.caption(f"{msg['model']} | 响应时间: {msg['duration']}ms")
     
-    # 输入框
-    if prompt := st.chat_input("描述您的材料科学问题..."):
+    # 模型选择和输入框（放在消息列表之后，显示在底部）
+    st.markdown("---")
+    input_container = st.container()
+    
+    with input_container:
+        col_model, col_input = st.columns([1, 4])
+        
+        with col_model:
+            st.session_state.selected_model = st.selectbox(
+                "模型",
+                options=["deepseek-chat", "deepseek-reasoner", "glm-5"],
+                index=["deepseek-chat", "deepseek-reasoner", "glm-5"].index(st.session_state.selected_model),
+                label_visibility="collapsed"
+            )
+        
+        with col_input:
+            prompt = st.chat_input("描述您的材料科学问题...")
+    
+    if prompt:
         # 添加用户消息
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -718,7 +767,6 @@ def chat_page():
             caption_placeholder = st.empty()
             
             full_message: str = ""
-            tool_results: list[dict[str, Any]] = []
             duration: int = 0
             
             # 当前文本的占位符
@@ -729,7 +777,7 @@ def chat_page():
             last_update_time = time.time()
             is_tool_running = False  # 标记是否正在执行工具
             
-            for event in chat_with_mcp_stream(prompt):
+            for event in chat_with_mcp_stream(prompt, model=st.session_state.selected_model):
                 event_type = event.get("type")
                 data = event.get("data")
                 
@@ -750,6 +798,26 @@ def chat_page():
                     # 标记工具开始执行
                     is_tool_running = True
                     
+                    tool_name = data.get("tool_name", "未知工具")
+                    # 使用后端传递的 tool_id 作为唯一标识
+                    tool_id = data.get("tool_id")
+                    if not tool_id:
+                        # 兼容旧数据，使用 tool_name + args 哈希
+                        tool_args = data.get("tool_args", {})
+                        tool_id = f"{tool_name}_{hash(str(tool_args))}"
+                    
+                    # 检查是否已经创建过这个工具框（避免重复）
+                    already_exists = False
+                    for item in content_placeholders:
+                        if (item.get("type") == "tool" and 
+                            item.get("tool_id") == tool_id and
+                            item.get("status") == "running"):
+                            already_exists = True
+                            break
+                    
+                    if already_exists:
+                        continue
+                    
                     # 保存当前文本占位符到列表（去掉光标）
                     if current_text:
                         current_text_placeholder.markdown(current_text)
@@ -760,7 +828,6 @@ def chat_page():
                         })
                     
                     # 创建新的工具占位符（在当前位置）
-                    tool_name = data.get("tool_name", "未知工具")
                     tool_placeholder = st.empty()
                     with tool_placeholder.container():
                         with st.expander(f"🔧 {tool_name}", expanded=True):
@@ -773,9 +840,9 @@ def chat_page():
                         "type": "tool",
                         "placeholder": tool_placeholder,
                         "data": data,
+                        "tool_id": tool_id,
                         "status": "running"
                     })
-                    tool_results.append(data)
                     
                     # 创建新的文本占位符用于后续内容
                     current_text = ""
@@ -783,24 +850,37 @@ def chat_page():
                     
                 elif event_type == "tool_end" and isinstance(data, dict):
                     # 工具调用完成，更新对应工具框
+                    tool_id = data.get("tool_id")
                     tool_name = data.get("tool_name")
+                    
                     for item in content_placeholders:
                         if (item.get("type") == "tool" and 
-                            item.get("data", {}).get("tool_name") == tool_name and
                             item.get("status") == "running"):
-                            # 更新工具框显示结果
-                            tool_placeholder = item["placeholder"]
-                            tool_data = item["data"].copy()
-                            tool_data["result"] = data.get("result")
+                            # 使用 tool_id 匹配
+                            item_tool_id = item.get("tool_id")
                             
-                            tool_placeholder.empty()
-                            with tool_placeholder.container():
-                                display_tool_result(tool_data)
+                            matched = False
+                            if tool_id and item_tool_id:
+                                matched = (tool_id == item_tool_id)
+                            elif tool_name:
+                                # 回退：使用 tool_name 匹配第一个未完成的同名工具
+                                item_tool_name = item.get("data", {}).get("tool_name")
+                                matched = (tool_name == item_tool_name)
                             
-                            # 更新状态
-                            item["status"] = "completed"
-                            item["data"] = tool_data
-                            break
+                            if matched:
+                                # 更新工具框显示结果
+                                tool_placeholder = item["placeholder"]
+                                tool_data = item["data"].copy()
+                                tool_data["result"] = data.get("result")
+                                
+                                tool_placeholder.empty()
+                                with tool_placeholder.container():
+                                    display_tool_result(tool_data)
+                                
+                                # 更新状态
+                                item["status"] = "completed"
+                                item["data"] = tool_data
+                                break
                     
                     # 重置工具运行标记
                     is_tool_running = False
@@ -839,10 +919,12 @@ def chat_page():
                 })
             
             if duration:
-                caption_placeholder.caption(f"⏱️ 响应时间: {duration}ms")
+                model_name = st.session_state.selected_model
+                caption_placeholder.caption(f" {model_name} | 响应时间: {duration}ms")
             
             # 构建 content_blocks 用于历史记录（移除 placeholder 对象，只保留可序列化的数据）
             content_blocks_for_history = []
+            
             for block in content_placeholders:
                 if block["type"] == "text":
                     content_blocks_for_history.append({
@@ -862,12 +944,20 @@ def chat_page():
                         "data": serializable_data
                     })
             
+            # 从 content_blocks_for_history 中提取 tool_results（用于兼容旧代码）
+            tool_results_for_api = [
+                block["data"] for block in content_blocks_for_history 
+                if block["type"] == "tool"
+            ]
+            
             # 保存消息到session_state（包含内容块顺序信息）
             st.session_state.messages.append({
                 "role": "assistant",
                 "content": full_message,
-                "tool_results": tool_results,
-                "content_blocks": content_blocks_for_history
+                "tool_results": tool_results_for_api,
+                "content_blocks": content_blocks_for_history,
+                "model": st.session_state.selected_model,
+                "duration": duration
             })
             
             # 通过API保存到服务器数据库（确保前后端数据一致）
@@ -876,8 +966,10 @@ def chat_page():
             )
             add_chat_message_via_api(
                 st.session_state.session_id, "assistant", full_message, 
-                tool_results=tool_results,
-                content_blocks=content_blocks_for_history
+                tool_results=tool_results_for_api,
+                content_blocks=content_blocks_for_history,
+                model=st.session_state.selected_model,
+                duration=duration
             )
 
 def material_search_page():

@@ -24,9 +24,9 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 os.makedirs(HTML_DIR, exist_ok=True)
 
 # ============ 配置 ============
-MAX_IMAGE_FILES = 100
-MAX_HTML_FILES = 50
-MAX_STRUCTURES = 50
+MAX_IMAGE_FILES = 50
+MAX_HTML_FILES = 30
+MAX_STRUCTURES = 30
 
 # ============ 结构信息存储 ============
 STRUCTURE_INFO = {}

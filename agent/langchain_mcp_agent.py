@@ -5,11 +5,11 @@ MatAgent MCP 适配器版本 - 使用 langchain-mcp-adapters 官方库
 
 import os
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Iterator
 from dotenv import load_dotenv
 
 # LangChain 相关导入
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, AIMessageChunk
 from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent as create_lc_agent
@@ -19,6 +19,28 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 
 # 加载环境变量
 load_dotenv()
+
+
+from langchain_core.callbacks import BaseCallbackHandler
+
+class ReasoningCallbackHandler(BaseCallbackHandler):
+    """捕获 reasoning_content 的回调处理器"""
+
+    def __init__(self):
+        super().__init__()
+        self.reasoning_content = ""
+
+    def on_llm_new_token(self, token: str, **kwargs):
+        pass
+
+    def on_llm_end(self, response, **kwargs):
+        # 从 response 中提取 reasoning_content
+        if hasattr(response, 'generations') and len(response.generations) > 0:
+            for gen in response.generations[0]:
+                if hasattr(gen, 'message') and hasattr(gen.message, 'response_metadata'):
+                    thinking = gen.message.response_metadata.get('reasoning_content')
+                    if thinking:
+                        self.reasoning_content += thinking
 
 # 系统提示词 - 定义Agent的角色和行为
 # 优先从环境变量读取，否则使用默认提示词
@@ -51,6 +73,25 @@ SYSTEM_PROMPT = os.getenv("MATAGENT_SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT)
 class MatAgentMCP:
     """MatAgent MCP 版本 - 使用官方 langchain-mcp-adapters 库"""
     
+    # 模型配置
+    MODEL_CONFIGS = {
+        "deepseek-chat": {
+            "api_key_env": "DEEPSEEK_API_KEY",
+            "base_url": "https://api.deepseek.com",
+            "model": "deepseek-chat",
+        },
+        "deepseek-reasoner": {
+            "api_key_env": "DEEPSEEK_API_KEY",
+            "base_url": "https://api.deepseek.com",
+            "model": "deepseek-reasoner",
+        },
+        "glm-5": {
+            "api_key_env": "ZAI_API_KEY",
+            "base_url": "https://open.bigmodel.cn/api/paas/v4",
+            "model": "glm-5",
+        },
+    }
+    
     def __init__(
         self,
         api_key: str = None,
@@ -58,16 +99,22 @@ class MatAgentMCP:
         model: str = "deepseek-chat",
         mcp_server_url: str = "http://localhost:8000/sse",
     ):
-        self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY")
-        if not self.api_key:
-            raise ValueError("必须提供 api_key 或设置 DEEPSEEK_API_KEY 环境变量")
-        
-        self.base_url = base_url
         self.model = str(model)
         self.mcp_server_url = mcp_server_url
         
+        # 获取模型配置
+        config = self.MODEL_CONFIGS.get(self.model, self.MODEL_CONFIGS["deepseek-chat"])
+        
+        # 获取 API Key
+        self.api_key = api_key or os.getenv(config["api_key_env"])
+        if not self.api_key:
+            raise ValueError(f"必须提供 api_key 或设置 {config['api_key_env']} 环境变量")
+        
+        self.base_url = base_url if base_url != "https://api.deepseek.com" else config["base_url"]
+        self.model_name = config["model"]
+        
         self.llm = ChatOpenAI(
-            model=str(self.model),
+            model=self.model_name,
             api_key=str(self.api_key),
             base_url=self.base_url,
             temperature=0.7,
@@ -77,6 +124,23 @@ class MatAgentMCP:
         self.agent = None
         self.tools: List[BaseTool] = []
         self.mcp_client: Optional[MultiServerMCPClient] = None
+    
+    def _get_llm_for_model(self, model: str) -> ChatOpenAI:
+        """获取指定模型的 LLM 实例"""
+        config = self.MODEL_CONFIGS.get(model, self.MODEL_CONFIGS["deepseek-chat"])
+        
+        # 获取 API Key
+        api_key = os.getenv(config["api_key_env"])
+        if not api_key:
+            raise ValueError(f"未设置 {config['api_key_env']} 环境变量")
+        
+        return ChatOpenAI(
+            model=config["model"],
+            api_key=api_key,
+            base_url=config["base_url"],
+            temperature=0.7,
+            streaming=True,
+        )
         
     def _wrap_tool(self, tool: BaseTool) -> BaseTool:
         """包装工具，将结构化结果转换为字符串"""
@@ -140,6 +204,10 @@ class MatAgentMCP:
         
         self.agent = create_lc_agent(self.llm, self.tools)
         print("✅ Agent 创建成功")
+    
+    def _create_agent_with_llm(self, llm):
+        """使用指定的 LLM 创建新的 agent"""
+        return create_lc_agent(llm, self.tools)
         
     async def disconnect(self):
         """断开 MCP Server 连接"""
@@ -158,7 +226,7 @@ class MatAgentMCP:
             for tool in self.tools
         ]
         
-    async def chat(self, message: str, thread_id: Optional[str] = None) -> dict:
+    async def chat(self, message: str, thread_id: Optional[str] = None, model: str = None) -> dict:
         """与 Agent 对话，返回包含工具调用信息的结果"""
         if not self.agent:
             raise RuntimeError("Agent 未初始化，请先调用 connect()")
@@ -171,7 +239,13 @@ class MatAgentMCP:
             HumanMessage(content=message)
         ]
         
-        response = await self.agent.ainvoke(
+        # 如果指定了不同模型，用该模型创建临时 agent
+        if model and model != self.model:
+            agent = self._create_agent_with_llm(self._get_llm_for_model(model))
+        else:
+            agent = self.agent
+        
+        response = await agent.ainvoke(
             {"messages": messages},
             config=config
         )
@@ -209,18 +283,23 @@ class MatAgentMCP:
             "tool_results": tool_results
         }
     
-    async def chat_stream(self, message: str, thread_id: Optional[str] = None):
+    async def chat_stream(self, message: str, thread_id: Optional[str] = None, model: str = None):
         """
         与 Agent 对话，以流式方式返回结果
         生成器yield格式: {"type": "tool_start", "data": {...}} 或 {"type": "token", "data": "..."} 或 {"type": "tool_end", "data": {...}}
-        
+
         使用 stream_mode="updates" 获取实时更新，包括工具调用和结果
+
+        Args:
+            message: 用户消息
+            thread_id: 会话ID
+            model: 指定使用的模型名称
         """
         if not self.agent:
             raise RuntimeError("Agent 未初始化，请先调用 connect()")
-        
+
         config = {"configurable": {"thread_id": thread_id or "default"}}
-        
+
         # 构建消息列表：系统提示词 + 用户消息
         messages = [
             SystemMessage(content=SYSTEM_PROMPT),
@@ -230,63 +309,79 @@ class MatAgentMCP:
         tool_results: list[dict[str, Any]] = []
         full_message = ""
         pending_tool_calls: dict[str, dict[str, Any]] = {}  # 跟踪待完成的工具调用
-        
-        # 使用 stream_mode="updates" 获取实时更新
-        async for chunk in self.agent.astream(
+        sent_tool_ids: set[str] = set()  # 跟踪已发送的 tool_start 事件
+
+        # 如果指定了不同模型，用该模型创建临时 agent
+        if model and model != self.model:
+            agent = self._create_agent_with_llm(self._get_llm_for_model(model))
+        else:
+            agent = self.agent
+
+        # 使用 stream_mode="messages" 获取流式消息
+        async for msg, metadata in agent.astream(
             {"messages": messages},
             config=config,
-            stream_mode="updates"
+            stream_mode="messages"
         ):
-            # chunk 是一个 dict，key 是节点名称，value 是节点输出
-            for node_name, node_output in chunk.items():
-                if not isinstance(node_output, dict):
-                    continue
-                
-                node_messages = node_output.get("messages", [])
-                if not node_messages:
-                    continue
-                
-                for msg in node_messages:
-                    # 处理 AI 消息（包含 token 和工具调用请求）
-                    if isinstance(msg, AIMessage):
-                        # 发送 token
-                        if hasattr(msg, 'content') and msg.content:
-                            content = msg.content
-                            if isinstance(content, str):
-                                full_message += content
-                                yield {"type": "token", "data": content}
+            # 处理 AI 消息（包含 token 和工具调用请求）
+            if isinstance(msg, AIMessage):
+                # 发送 token
+                if hasattr(msg, 'content') and msg.content:
+                    content = msg.content
+                    if isinstance(content, str):
+                        full_message += content
+                        yield {"type": "token", "data": content}
+
+                # 检测工具调用请求
+                if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                    for tc in msg.tool_calls:
+                        # 支持多种可能的字段名
+                        tool_name = tc.get("name") or tc.get("function", {}).get("name") or "unknown"
+                        tool_args = tc.get("args") or tc.get("function", {}).get("arguments") or {}
+                        tool_call_id = tc.get("id")
                         
-                        # 检测工具调用请求
-                        if hasattr(msg, 'tool_calls') and msg.tool_calls:
-                            for tc in msg.tool_calls:
-                                tool_name = tc.get("name", "unknown")
-                                tool_args = tc.get("args", {})
-                                tool_id = tc.get("id") or tool_name
-                                
-                                tool_info: dict[str, Any] = {
-                                    "tool_name": tool_name,
-                                    "tool_args": tool_args,
-                                    "result": None
-                                }
-                                tool_results.append(tool_info)
-                                pending_tool_calls[tool_id] = tool_info
-                                yield {"type": "tool_start", "data": tool_info}
-                    
-                    # 处理工具返回结果
-                    elif hasattr(msg, 'name') and msg.name:
-                        tool_name = msg.name
-                        tool_content = msg.content if hasattr(msg, 'content') else None
+                        # 跳过无效的工具调用（id 为 None 或 name 为 unknown 且 args 为空）
+                        if not tool_call_id and tool_name == "unknown":
+                            continue
                         
-                        # 找到对应的工具调用并更新
-                        for tr in tool_results:
-                            if tr.get("tool_name") == tool_name and tr.get("result") is None:
-                                tr["result"] = tool_content
-                                yield {"type": "tool_end", "data": tr}
-                                break
-        
+                        # 生成唯一标识：优先使用工具返回的 id，否则用 name+args 哈希
+                        if tool_call_id:
+                            tool_id = tool_call_id
+                        else:
+                            import hashlib
+                            args_str = str(tool_args)
+                            tool_id = f"{tool_name}_{hashlib.md5(args_str.encode()).hexdigest()[:8]}"
+
+                        # 避免重复发送同一个工具调用
+                        if tool_id in sent_tool_ids:
+                            continue
+                        sent_tool_ids.add(tool_id)
+
+                        tool_info: dict[str, Any] = {
+                            "tool_name": tool_name,
+                            "tool_args": tool_args,
+                            "tool_id": tool_id,
+                            "result": None
+                        }
+                        tool_results.append(tool_info)
+                        pending_tool_calls[tool_id] = tool_info
+                        yield {"type": "tool_start", "data": tool_info}
+
+            # 处理工具返回结果
+            elif hasattr(msg, 'name') and msg.name:
+                tool_name = msg.name
+                tool_content = msg.content if hasattr(msg, 'content') else None
+
+                # 找到对应的工具调用并更新
+                for tr in tool_results:
+                    if tr.get("tool_name") == tool_name and tr.get("result") is None:
+                        tr["result"] = tool_content
+                        yield {"type": "tool_end", "data": tr}
+                        break
+
         # 清理消息中的工具JSON内容
         cleaned_message = self._clean_tool_json_from_message(full_message)
-        
+
         # 发送最终完整消息
         yield {"type": "complete", "data": {"message": cleaned_message, "tool_results": tool_results}}
     
@@ -398,11 +493,11 @@ class MatAgentMCPSync:
             self._run_async(self._async_agent.disconnect())
             self._connected = False
             
-    def chat(self, message: str, thread_id: Optional[str] = None) -> dict:
+    def chat(self, message: str, thread_id: Optional[str] = None, model: str = None) -> dict:
         """同步方式对话，返回包含工具调用信息的结果"""
         if not self._connected:
             self.connect()
-        return self._run_async(self._async_agent.chat(message, thread_id))
+        return self._run_async(self._async_agent.chat(message, thread_id, model))
     
     def invoke_tool(self, tool_name: str, **kwargs) -> Any:
         """直接调用 MCP 工具（绕过 LLM，更快）"""

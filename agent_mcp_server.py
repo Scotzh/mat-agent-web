@@ -44,6 +44,8 @@ def _ensure_chat_table():
                 content TEXT,
                 tool_results TEXT,
                 content_blocks TEXT,
+                model VARCHAR,
+                duration INTEGER,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -54,7 +56,13 @@ def _ensure_chat_table():
         columns = [row[1] for row in cursor.fetchall()]
         if 'content_blocks' not in columns:
             conn.execute('ALTER TABLE chat_history ADD COLUMN content_blocks TEXT')
-            conn.commit()
+        # 检查并添加 model 列（兼容旧表）
+        if 'model' not in columns:
+            conn.execute('ALTER TABLE chat_history ADD COLUMN model VARCHAR')
+        # 检查并添加 duration 列（兼容旧表）
+        if 'duration' not in columns:
+            conn.execute('ALTER TABLE chat_history ADD COLUMN duration INTEGER')
+        conn.commit()
     finally:
         conn.close()
 
@@ -80,7 +88,7 @@ def init_database():
     _ensure_session_table()
     print(f"✅ 数据库已初始化: {DB_PATH}")
 
-def add_chat_message(session_id: str, role: str, content: str, tool_results: list[dict] | None = None, content_blocks: list[dict] | None = None):
+def add_chat_message(session_id: str, role: str, content: str, tool_results: list[dict] | None = None, content_blocks: list[dict] | None = None, model: str | None = None, duration: int | None = None):
     """添加聊天消息到数据库"""
     _ensure_chat_table()
     conn = sqlite3.connect(DB_PATH, timeout=30)
@@ -88,9 +96,9 @@ def add_chat_message(session_id: str, role: str, content: str, tool_results: lis
         tool_results_json = json.dumps(tool_results, ensure_ascii=False) if tool_results else None
         content_blocks_json = json.dumps(content_blocks, ensure_ascii=False) if content_blocks else None
         conn.execute('''
-            INSERT INTO chat_history (session_id, role, content, tool_results, content_blocks)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (session_id, role, content, tool_results_json, content_blocks_json))
+            INSERT INTO chat_history (session_id, role, content, tool_results, content_blocks, model, duration)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (session_id, role, content, tool_results_json, content_blocks_json, model, duration))
         conn.commit()
     finally:
         conn.close()
@@ -101,7 +109,7 @@ def get_chat_history(session_id: str, limit: int = 50) -> list[dict[str, Any]]:
     conn = sqlite3.connect(DB_PATH, timeout=30)
     try:
         results = conn.execute('''
-            SELECT role, content, tool_results, content_blocks, timestamp 
+            SELECT role, content, tool_results, content_blocks, model, duration, timestamp 
             FROM chat_history 
             WHERE session_id = ?
             ORDER BY timestamp ASC
@@ -113,7 +121,9 @@ def get_chat_history(session_id: str, limit: int = 50) -> list[dict[str, Any]]:
                 "content": r[1], 
                 "tool_results": json.loads(r[2]) if r[2] else None,
                 "content_blocks": json.loads(r[3]) if r[3] else None,
-                "timestamp": r[4]
+                "model": r[4],
+                "duration": r[5],
+                "timestamp": r[6]
             } 
             for r in results
         ]
@@ -265,6 +275,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     history: list[Any] | None = None
+    model: str = "deepseek-chat"  # 模型选择: deepseek-chat, deepseek-reasoner, glm-5
 
 
 class ChatResponse(BaseModel):
@@ -285,6 +296,8 @@ class AddMessageRequest(BaseModel):
     content: str
     tool_results: list[dict[str, Any]] | None = None
     content_blocks: list[dict[str, Any]] | None = None
+    model: str | None = None
+    duration: int | None = None
 
 
 class HealthResponse(BaseModel):
@@ -439,7 +452,7 @@ async def chat_stream(request: ChatRequest):
                 enhanced_message = request.message
             
             # 3. 使用流式方法
-            async for event in agent._async_agent.chat_stream(enhanced_message, session_id):
+            async for event in agent._async_agent.chat_stream(enhanced_message, session_id, request.model):
                 # 发送事件
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                 
@@ -600,7 +613,9 @@ async def api_add_message(session_id: str, request: AddMessageRequest):
         role=request.role,
         content=request.content,
         tool_results=request.tool_results,
-        content_blocks=request.content_blocks
+        content_blocks=request.content_blocks,
+        model=request.model,
+        duration=request.duration
     )
     return {"status": "success", "session_id": session_id}
 
