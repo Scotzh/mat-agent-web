@@ -1,5 +1,6 @@
 {
   "info": {
+<<<<<<< HEAD
     "383615a0-4c2d-426e-860d-1961de60af15": {
       "id": "383615a0-4c2d-426e-860d-1961de60af15",
       "reduced_formula": "Cu3P",
@@ -964,6 +965,30 @@
       "sites": [
         {
           "element": "Na",
+=======
+    "dcac769a-64df-4791-86c8-dfac2addbe34": {
+      "id": "dcac769a-64df-4791-86c8-dfac2addbe34",
+      "reduced_formula": "GaAs",
+      "full_formula": "Ga4 As4",
+      "space_group_symbol": "F-43m",
+      "space_group_number": 216,
+      "num_sites": 8,
+      "is_ordered": true,
+      "density": 5.1113,
+      "html_file": "9f827f86531f4297b8cb7b997bf038a1.html",
+      "lattice": {
+        "a": 5.7283,
+        "b": 5.7283,
+        "c": 5.7283,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 187.97
+      },
+      "sites": [
+        {
+          "element": "Ga",
+>>>>>>> 19ccd3b (问了几个问题)
           "coords": [
             0.0,
             0.0,
@@ -971,6 +996,7 @@
           ]
         },
         {
+<<<<<<< HEAD
           "element": "Cl",
           "coords": [
             0.5,
@@ -1328,6 +1354,9 @@
         },
         {
           "element": "Na",
+=======
+          "element": "Ga",
+>>>>>>> 19ccd3b (问了几个问题)
           "coords": [
             0.0,
             0.5,
@@ -1335,6 +1364,7 @@
           ]
         },
         {
+<<<<<<< HEAD
           "element": "Na",
           "coords": [
             0.0,
@@ -1395,10 +1425,17 @@
           "coords": [
             0.0,
             0.625,
+=======
+          "element": "Ga",
+          "coords": [
+            0.5,
+            -0.0,
+>>>>>>> 19ccd3b (问了几个问题)
             0.5
           ]
         },
         {
+<<<<<<< HEAD
           "element": "Na",
           "coords": [
             0.0,
@@ -4947,10 +4984,17 @@
           "coords": [
             0.875,
             0.625,
+=======
+          "element": "Ga",
+          "coords": [
+            0.5,
+            0.5,
+>>>>>>> 19ccd3b (问了几个问题)
             0.0
           ]
         },
         {
+<<<<<<< HEAD
           "element": "Na",
           "coords": [
             0.875,
@@ -4963,10 +5007,17 @@
           "coords": [
             0.875,
             0.625,
+=======
+          "element": "As",
+          "coords": [
+            0.25,
+            0.25,
+>>>>>>> 19ccd3b (问了几个问题)
             0.25
           ]
         },
         {
+<<<<<<< HEAD
           "element": "Na",
           "coords": [
             0.875,
@@ -4995,10 +5046,17 @@
           "coords": [
             0.875,
             0.625,
+=======
+          "element": "As",
+          "coords": [
+            0.25,
+            0.75,
+>>>>>>> 19ccd3b (问了几个问题)
             0.75
           ]
         },
         {
+<<<<<<< HEAD
           "element": "Na",
           "coords": [
             0.875,
@@ -9897,11 +9955,28 @@
             0.0135,
             0.4865
           ]
+=======
+          "element": "As",
+          "coords": [
+            0.75,
+            0.25,
+            0.75
+          ]
+        },
+        {
+          "element": "As",
+          "coords": [
+            0.75,
+            0.75,
+            0.25
+          ]
+>>>>>>> 19ccd3b (问了几个问题)
         }
       ]
     }
   },
   "queue": [
+<<<<<<< HEAD
     "383615a0-4c2d-426e-860d-1961de60af15",
     "d4a4ab76-85cc-4f09-b6af-0bc7a8b381c5",
     "28eb0f32-b6de-489f-8d8e-99da32cdcc5a",
@@ -9912,5 +9987,8 @@
     "b39653fc-ef05-4134-97f0-5a8fb192bc47",
     "4437115e-453a-4b90-b0b7-e5fa78474b85",
     "7dce0eb4-b1a7-477a-b1ff-0129d3a9dac4"
+=======
+    "dcac769a-64df-4791-86c8-dfac2addbe34"
+>>>>>>> 19ccd3b (问了几个问题)
   ]
 }
