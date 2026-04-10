@@ -3,16 +3,16 @@
 ## 快速启动
 
 ```bash
-# 1. 启动 Flask 文件服务器（2D/3D 可视化）
+# 启动 Flask 文件服务器（2D/3D 可视化）
 python flask_server.py
 
-# 2. 启动 Web 界面
-streamlit run web_app.py
+# 启动 Web 界面
+streamlit run web_mcp_app.py
 ```
 
 ## 必需环境变量 (.env)
 
-- `DEEPSEEK_API_KEY` - DeepSeek API
+- `DEEPSEEK_API_KEY` - DeepSeek API (必需)
 - `mp_API_KEY` - Materials Project API
 - `HOST`, `PORT`, `USERNAME`, `PASSWORD`, `base_dir` - SSH/VASP 配置
 
@@ -20,23 +20,26 @@ streamlit run web_app.py
 
 | 文件 | 作用 |
 |------|------|
-| `web_app.py` | Streamlit 入口，5个功能面板 |
-| `agent/langchain_agent.py` | LangGraph Agent，ReAct 模式 |
-| `flask_server.py` | 2D 图片 / 3D HTML 文件服务 |
+| `web_mcp_app.py` | Streamlit 入口，5个功能面板 |
+| `agent/langchain_mcp_agent.py` | LangGraph MCP Agent |
+| `agent_mcp_server.py` | FastAPI Agent 服务 (端口 8766) |
+| `flask_server.py` | 2D 图片 / 3D HTML 文件服务 (端口 6750) |
+| `mcp_server.py` | MCP 工具服务器 (端口 8000) |
 | `tryssh.py` | SSH 远程连接，VASP 任务管理 |
 | `databasemanage.py` | SQLite 数据库 |
 
 ## 常见陷阱
 
 ### 1. StructuredTool 不可直接调用
-`@tool` 装饰的函数变成 `StructuredTool` 对象，调用会报错。解决方案：使用 `MatAgent` 类的 wrapper 方法：
+`@tool` 装饰的函数变成 `StructuredTool` 对象，调用会报错。解决方案：使用 `MatAgentMCP` 类的 wrapper 方法：
 ```python
 # 错误
-from agent.langchain_agent import search_materials
+from agent.langchain_mcp_agent import search_materials
 result = search_materials(elements=['Li'])
 
 # 正确
-agent = MatAgent(api_key='xxx')
+from agent.langchain_mcp_agent import MatAgentMCP
+agent = MatAgentMCP(api_key='xxx')
 result = agent.search_materials(elements=['Li'])
 ```
 
@@ -60,34 +63,50 @@ class DatabaseManager:
 `flask_server.py` 使用 `structure_info.json` 保存结构元数据，启动时自动加载。
 
 ### 4. 聊天历史
-- 数据库: `matagent_history.db`
+- 数据库: `matagent_history.db` 或 `matagent_server_history.db`
 - 每次页面加载同步消息到 Agent: `main()` 中检查并更新 `_message_history`
 
 ## 测试
 
 ```bash
-# 测试单个模块
-python -c "from agent.langchain_agent import MatAgent; print('OK')"
+# 测试模块导入
+python -c "from agent.langchain_mcp_agent import MatAgentMCP; print('OK')"
+
+# 测试 MCP Server
+python mcp_server.py
+
+# 测试 Agent Server
+python agent_mcp_server.py
 ```
+
+## 依赖管理
+
+项目使用 `uv` 管理依赖：
+```bash
+uv sync          # 同步依赖
+uv pip install -r requirements.txt  # 备用
+```
+Python 版本: **3.13.4** (pyproject.toml 要求)
 
 ## 目录结构
 
 ```
-mat-agent-mcp/
-├── web_app.py              # Web 入口
-├── agent/langchain_agent.py # LangGraph Agent
-├── flask_server.py          # 文件服务
-├── databasemanage.py        # 数据库
-├── tryssh.py               # SSH/VASP
-├── myml/bandgap_predict.py # ML 预测
-├── temp_images/            # 2D 图片缓存
-├── temp_3d/                # 3D HTML 缓存
-├── structure_info.json     # 结构元数据
-└── matagent_history.db     # 聊天历史
+mat-agent-web/
+├── web_mcp_app.py              # Streamlit Web 应用 (端口 8501)
+├── agent_mcp_server.py         # FastAPI Agent 服务 (端口 8766)
+├── agent/
+│   └── langchain_mcp_agent.py  # LangChain MCP Agent 核心
+├── mcp_server.py               # MCP 工具服务器 (端口 8000)
+├── flask_server.py             # 文件服务 (端口 6750)
+├── databasemanage.py           # SQLite 数据库
+├── tryssh.py                   # SSH/VASP 远程操作
+├── myml/                       # 机器学习模型
+├── temp_images/                # 2D 结构图缓存
+├── temp_3d/                    # 3D 可视化 HTML 缓存
+└── .streamlit/config.toml      # Streamlit 配置
 ```
 
 ## 参考
 
-- 详细文档: `项目概述.md`
-- MCP 工具: `README.md`
-- 原有指南: `mcp_skill.instructions.md`
+- 详细文档: `README.md`
+- MCP 工具说明: `README.md` (搜索 "MCP Server")
