@@ -784,7 +784,7 @@ async def predict_bandgap(formula: str):
     """预测材料带隙"""
     try:
         result = await invoke_mcp_tool_direct("predict_band_gap", {"formula": formula})
-        return {"prediction": result}
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -25,6 +25,8 @@ st.set_page_config(
 # MCP Agent API 地址
 MCP_AGENT_URL = "http://127.0.0.1:8766"
 
+
+
 # ============ Logo 配置 ============
 # 方式1: 使用本地图片文件（推荐）
 LOGO_PATH = "assets/logo.png"  # 把你的 logo 放在项目根目录的 assets 文件夹中
@@ -173,6 +175,34 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     
+    /* 回到底部浮动按钮 */
+    .scroll-to-bottom {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        cursor: pointer;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: all 0.3s ease;
+    }
+    .scroll-to-bottom:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+    }
+    .scroll-to-bottom:active {
+        transform: translateY(-1px);
+    }
+    
     /* 功能按钮 */
     .stButton>button {
         border-radius: 8px;
@@ -209,6 +239,18 @@ st.markdown("""
         margin: 0 !important;
         padding: 0 !important;
     }
+    
+    /* 模型选择下拉框与输入框对齐 */
+    div[data-testid="stSelectbox"] > label {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    div[data-testid="stSelectbox"] > div > div[data-baseweb="select"] > div {
+        min-height: 44px !important;
+        height: 44px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -239,15 +281,68 @@ def call_mcp_api(endpoint: str, method: str = "GET", params: dict = None, json_d
         return {"error": str(e)}
 
 
+def extract_returns(result: Any) -> Any:
+    """
+    从 MCP API 返回结果中提取 returns 字段
+    
+    处理流程:
+    1. 如果是列表格式 [{"type": "text", "text": "..."}], 先提取 text 中的 JSON
+    2. 如果是 {"args": ..., "returns": ...} 格式, 返回 returns
+    3. 如果是 {"prediction": ...}, {"result": ...} 或 {"data": ...} 格式, 递归解析内部值
+    
+    Args:
+        result: API 返回的原始数据
+    
+    Returns:
+        提取并解析后的 returns 数据
+    """
+    if result is None:
+        return None
+    
+    # 处理字符串类型（可能是JSON）
+    if isinstance(result, str):
+        try:
+            result = json.loads(result)
+        except json.JSONDecodeError:
+            return result
+    
+    # 处理列表格式: [{"type": "text", "text": "..."}]
+    if isinstance(result, list) and len(result) > 0:
+        first_item = result[0]
+        if isinstance(first_item, dict) and "text" in first_item:
+            try:
+                inner = json.loads(first_item["text"])
+                # 递归处理内部值
+                return extract_returns(inner)
+            except json.JSONDecodeError:
+                return first_item["text"]
+        return result
+    
+    # 处理字典格式
+    if isinstance(result, dict):
+        # 如果是 {"args": ..., "returns": ...} 格式, 提取 returns 并继续处理
+        if "returns" in result:
+            returns_data = result["returns"]
+            # 如果 returns 里有 data 键, 直接返回 data(材料列表)
+            if isinstance(returns_data, dict) and "data" in returns_data:
+                return returns_data["data"]
+            return returns_data
+        
+        # 如果有 result 或 data 键, 递归解析
+        if "result" in result:
+            return extract_returns(result["result"])
+        if "data" in result:
+            return extract_returns(result["data"])
+        
+        # 其他字典直接返回
+        return result
+    
+    return result
+
+
 def parse_mcp_result(result: dict, key: str = "result") -> Any:
     """
-    统一解析 MCP API 返回的结果
-    
-    处理多种可能的返回格式:
-    1. {"result": [...]} - 标准格式
-    2. {"result": [[{"text": "..."}]]} - MCP 嵌套列表格式
-    3. {"result": {"structured_content": ...}} - 结构化内容格式
-    4. {"error": "..."} - 错误格式
+    统一解析 MCP API 返回的结果（使用 extract_returns 简化处理）
     
     Args:
         result: API 返回的原始字典
@@ -262,33 +357,8 @@ def parse_mcp_result(result: dict, key: str = "result") -> Any:
     if "error" in result:
         return result
     
-    data = result.get(key)
-    if data is None:
-        return {"error": f"返回结果中缺少 '{key}' 键"}
-    
-    # 处理嵌套列表格式: [[{"text": "..."}]]
-    if isinstance(data, list) and len(data) > 0:
-        # 检查是否是嵌套列表
-        if isinstance(data[0], list):
-            inner = data[0]
-            if len(inner) > 0 and isinstance(inner[0], dict) and "text" in inner[0]:
-                try:
-                    return json.loads(inner[0]["text"])
-                except json.JSONDecodeError:
-                    return {"text": inner[0]["text"]}
-            return inner
-        # 检查是否包含 text 字段
-        elif isinstance(data[0], dict) and "text" in data[0]:
-            try:
-                return json.loads(data[0]["text"])
-            except json.JSONDecodeError:
-                return {"text": data[0]["text"]}
-    
-    # 处理结构化内容格式
-    if isinstance(data, dict) and "structured_content" in data:
-        return data["structured_content"]
-    
-    return data
+    # 使用 extract_returns 提取 returns
+    return extract_returns(result)
 
 
 def safe_json_loads(text: str, default: Any = None) -> Any:
@@ -671,30 +741,70 @@ def sidebar():
 def display_tool_result(tr: dict):
     """显示单个工具调用结果"""
     tool_name = tr.get("tool_name", "未知工具")
-    tool_args = tr.get("tool_args", {})
-    result = tr.get("result")
+    raw_result = tr.get("result")
+    
+    # 先处理字符串类型（可能是JSON）
+    result = raw_result
+    if isinstance(result, str):
+        try:
+            result = json.loads(result)
+        except json.JSONDecodeError:
+            pass
+    
+    # 处理 [[{"type": "text", "text": "..."}], {...}] 格式
+    if isinstance(result, list) and len(result) >= 1:
+        # 第一个元素是 text 列表
+        if isinstance(result[0], list) and len(result[0]) > 0:
+            first_item = result[0][0]
+            if isinstance(first_item, dict) and first_item.get("type") == "text":
+                text_str = first_item.get("text")
+                # 尝试解析 text 中的 JSON
+                if text_str:
+                    try:
+                        result = json.loads(text_str)
+                    except json.JSONDecodeError:
+                        result = text_str
+        # 如果上面的解析失败，尝试第二个元素
+        if isinstance(result, list) and len(result) >= 2 and isinstance(result[1], dict):
+            structured = result[1].get("structured_content")
+            if structured:
+                result = structured
+    
+    # 统一从 result 中提取 args 和 returns
+    tool_args = None
+    if isinstance(result, dict):
+        tool_args = result.get("args")
+        if "returns" in result:
+            result = result.get("returns")
+    elif isinstance(result, str):
+        # 如果结果是字符串，尝试解析为JSON
+        try:
+            parsed = json.loads(result)
+            if isinstance(parsed, dict):
+                tool_args = parsed.get("args")
+                if "returns" in parsed:
+                    result = parsed.get("returns")
+        except json.JSONDecodeError:
+            pass
     
     with st.expander(f"🔧 {tool_name}", expanded=False):
         # 显示工具参数
-        if tool_args:
-            st.markdown("**📥 输入参数:**")
+        st.markdown("**输入参数:**")
+        if tool_args is not None and tool_args != {}:
             st.json(tool_args)
+        else:
+            st.json({})
         
         # 显示工具返回结果
-        st.markdown("**📤 返回结果:**")
+        st.markdown("**返回结果:**")
         
-        # 如果结果是字符串，尝试解析为JSON
-        if isinstance(result, str):
-            try:
-                parsed = json.loads(result)
-                if isinstance(parsed, dict):
-                    result = parsed
-            except json.JSONDecodeError:
-                pass
-        
+        # 处理结果是字典的情况（提取图片、链接等）
         if isinstance(result, dict):
-            # 处理图片URL
+            # 从 result 中提取图片和链接
             img_url = result.get("2d_image_url") or result.get("image_url") or result.get("image")
+            html_url = result.get("3d_html_url") or result.get("3d_image_url")
+            
+            # 显示图片
             if img_url:
                 st.markdown("**🖼️ 结构图:**")
                 try:
@@ -702,16 +812,14 @@ def display_tool_result(tr: dict):
                 except Exception as e:
                     st.error(f"加载图片失败: {e}")
             
-            # 处理3D可视化链接
-            html_url = result.get("3d_html_url") or result.get("3d_image_url")
+            # 显示3D链接
             if html_url:
                 st.markdown(f"**🌐 3D 可视化:** [点击查看]({html_url})")
-                # 嵌入iframe显示3D结构
                 if html_url.startswith("/"):
                     html_url = f"http://127.0.0.1:5001{html_url}"
                 st.components.v1.iframe(html_url, height=400, scrolling=True)
             
-            # 处理CIF文件下载
+            # CIF 文件下载
             cif_path = result.get("cif_path")
             if cif_path and os.path.exists(cif_path):
                 st.markdown("**📥 CIF 文件:**")
@@ -723,16 +831,15 @@ def display_tool_result(tr: dict):
                         mime="chemical/x-cif"
                     )
             
-            # 显示其他JSON数据（排除已处理的字段）
-            json_data = {k: v for k, v in result.items() 
-                        if k not in ["2d_image_url", "3d_html_url", "3d_image_url", 
-                                     "image_url", "image", "cif_path"]}
-            if json_data:
-                st.json(json_data)
+            # 显示简化后的内容（排除已处理的字段）
+            display_data = {k: v for k, v in result.items() 
+                           if k not in ["2d_image_url", "3d_html_url", "3d_image_url", 
+                                        "image_url", "image", "cif_path", "structure_dict"]}
+            if display_data:
+                st.json(display_data)
         elif result is None:
             st.markdown("*等待结果...*")
         else:
-            # 非字典结果直接显示
             st.code(str(result))
 
 
@@ -740,6 +847,36 @@ def chat_page():
     # 只显示副标题（Logo 只在侧边栏显示）
     st.markdown('<h1 class="main-title">💬 MatAgent材料智能设计平台</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">基于 MCP 协议的材料科学智能助手</p>', unsafe_allow_html=True)
+    
+    # 添加回到底部的浮动按钮 - 使用 HTML anchor 链接
+    st.markdown("""
+    <style>
+    .scroll-bottom-link {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        cursor: pointer;
+        z-index: 999999;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+    .scroll-bottom-link:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+    }
+    </style>
+    <a href="#chat-input-anchor" class="scroll-bottom-link" title="回到底部">⬇️</a>
+    """, unsafe_allow_html=True)
     
     if not st.session_state.mcp_connected:
         st.warning("⚠️ MCP 服务未连接，请确保 agent_mcp_server.py 已启动")
@@ -812,6 +949,8 @@ def chat_page():
             )
         
         with col_input:
+            # 添加锚点用于回到底部按钮
+            st.markdown('<div id="chat-input-anchor"></div>', unsafe_allow_html=True)
             prompt = st.chat_input("描述您的材料科学问题...")
     
     if prompt:
@@ -859,6 +998,7 @@ def chat_page():
                     is_tool_running = True
                     
                     tool_name = data.get("tool_name", "未知工具")
+                    print(f"[FRONTEND DEBUG] tool_start received: {data}")
                     # 使用后端传递的 tool_id 作为唯一标识
                     tool_id = data.get("tool_id")
                     if not tool_id:
@@ -892,9 +1032,7 @@ def chat_page():
                     with tool_placeholder.container():
                         with st.expander(f"🔧 {tool_name}", expanded=True):
                             st.markdown("*正在执行...*")
-                            if data.get("tool_args"):
-                                st.markdown("**📥 输入参数:**")
-                                st.json(data["tool_args"])
+                            # 工具开始时先不显示参数，等工具结束后再显示
                     
                     content_placeholders.append({
                         "type": "tool",
@@ -912,6 +1050,7 @@ def chat_page():
                     # 工具调用完成，更新对应工具框
                     tool_id = data.get("tool_id")
                     tool_name = data.get("tool_name")
+                    result = data.get("result")
                     
                     for item in content_placeholders:
                         if (item.get("type") == "tool" and 
@@ -931,7 +1070,7 @@ def chat_page():
                                 # 更新工具框显示结果
                                 tool_placeholder = item["placeholder"]
                                 tool_data = item["data"].copy()
-                                tool_data["result"] = data.get("result")
+                                tool_data["result"] = result
                                 
                                 tool_placeholder.empty()
                                 with tool_placeholder.container():
@@ -994,10 +1133,21 @@ def chat_page():
                 elif block["type"] == "tool":
                     # 只提取可序列化的字段
                     tool_data = block["data"]
+                    result = tool_data.get("result")
+                    tool_args = tool_data.get("tool_args")
+                    
+                    # 处理新的格式 {"args": ..., "returns": ...}
+                    if isinstance(result, dict) and "returns" in result:
+                        # 从结果中提取参数（如果之前没有）
+                        if tool_args is None or tool_args == {}:
+                            tool_args = result.get("args")
+                        # 使用实际的返回内容
+                        result = result.get("returns")
+                    
                     serializable_data = {
                         "tool_name": tool_data.get("tool_name"),
-                        "tool_args": tool_data.get("tool_args"),
-                        "result": tool_data.get("result")
+                        "tool_args": tool_args,
+                        "result": result
                     }
                     content_blocks_for_history.append({
                         "type": "tool",
@@ -1031,6 +1181,9 @@ def chat_page():
                 model=st.session_state.selected_model,
                 duration=duration
             )
+            
+            # 流式传输结束后刷新页面，让聊天框回到最底部
+            st.rerun()
 
 def material_search_page():
     st.markdown('<h1 class="main-title">🔍 材料查询</h1>', unsafe_allow_html=True)
@@ -1070,13 +1223,10 @@ def material_search_page():
                         if "error" in result:
                             st.error(f"搜索失败: {result['error']}")
                             st.session_state.search_results = None
-                        elif "result" in result:
+                        else:
                             # 使用统一解析函数处理结果
                             materials = parse_mcp_result(result)
                             st.session_state.search_results = materials
-                        else:
-                            st.info("未找到结果")
-                            st.session_state.search_results = None
             
             # 显示搜索结果（独立于搜索按钮状态）
             if st.session_state.get("search_results"):
@@ -1088,14 +1238,15 @@ def material_search_page():
                     st.success(f"找到 {len(materials)} 个材料")
                     
                     for mat in materials:
-                        mat_id = mat.get('material_id')
-                        formula = mat.get('formula_pretty') or mat.get('formula', 'Unknown')
+                        # 支持新旧两种字段名格式
+                        mat_id = mat.get('entry_id') or mat.get('material_id')
+                        formula = mat.get('name') or mat.get('formula_pretty') or mat.get('formula', 'Unknown')
                         with st.expander(f"{formula} ({mat_id})"):
                             col_a, col_b = st.columns(2)
                             col_a.metric("带隙", f"{mat.get('band_gap', 'N/A')} eV")
                             
                             # 处理不同的对称性格式
-                            symmetry = mat.get('symmetry', {})
+                            symmetry = mat.get('spacegroup') or mat.get('symmetry', {})
                             if isinstance(symmetry, dict):
                                 crystal_system = symmetry.get('crystal_system', 'N/A')
                             else:
@@ -1109,8 +1260,8 @@ def material_search_page():
                                 with st.spinner("获取结构中..."):
                                     struct = get_material_structure(mat_id)
                                     if "error" not in struct:
-                                        # MCP 返回的数据在 result 中
-                                        result_data = struct.get("result", {})
+                                        # 使用统一解析函数处理结果
+                                        result_data = parse_mcp_result(struct)
                                         # 存储完整的结果数据（包含 image_url, 3d_image_url, structure_dict）
                                         st.session_state[struct_key] = result_data
                                         # 强制重新运行以显示结构
@@ -1419,10 +1570,8 @@ def ml_prediction_page():
             result = st.session_state.prediction_result
             # 解析 ML 预测结果
             try:
-                prediction_data = result.get("prediction", result)
-                
-                # 使用统一解析函数处理结果
-                parsed = parse_mcp_result(result, key="prediction")
+                # 使用统一解析函数处理结果（使用默认key="result"）
+                parsed = parse_mcp_result(result)
                 
                 if isinstance(parsed, dict) and "predicted_band_gap" in parsed:
                     gap = parsed["predicted_band_gap"]
@@ -1527,7 +1676,9 @@ def vasp_task_page():
                     result = vasp_create_task(formula, cif_path)
                     if "error" not in result:
                         st.success("创建成功!")
-                        st.json(result)
+                        # 使用统一解析函数处理结果
+                        parsed = parse_mcp_result(result)
+                        st.json(parsed)
                     else:
                         st.error(result["error"])
             else:
@@ -1562,7 +1713,9 @@ def vasp_task_page():
                     result = vasp_create_mission(task_dir, mission_type)
                     if "error" not in result:
                         st.success("生成成功!")
-                        st.json(result)
+                        # 使用统一解析函数处理结果
+                        parsed = parse_mcp_result(result)
+                        st.json(parsed)
                     else:
                         st.error(result["error"])
     
@@ -1588,7 +1741,9 @@ def vasp_task_page():
                     with st.spinner("读取中..."):
                         result = vasp_modify_incar(incar_dir, incar_mission, "__read__", "")
                         if "error" not in result:
-                            st.session_state.incar_content = result
+                            # 使用统一解析函数处理结果
+                            parsed = parse_mcp_result(result)
+                            st.session_state.incar_content = parsed
                             st.success("读取成功!")
                         else:
                             st.error(result.get("error", "读取失败"))
@@ -1723,7 +1878,9 @@ def vasp_task_page():
                         result = vasp_submit(submit_dir, submit_mission)
                         if "error" not in result:
                             st.success("提交成功!")
-                            st.json(result)
+                            # 使用统一解析函数处理结果
+                            parsed = parse_mcp_result(result)
+                            st.json(parsed)
                         else:
                             st.error(result["error"])
         
@@ -1745,7 +1902,9 @@ def vasp_task_page():
                         result = vasp_extract(extract_dir, extract_mission, plot_result)
                         if "error" not in result:
                             st.success("提取成功!")
-                            st.json(result)
+                            # 使用统一解析函数处理结果
+                            parsed = parse_mcp_result(result)
+                            st.json(parsed)
                         else:
                             st.error(result["error"])
 

@@ -17,6 +17,8 @@ from warnings import simplefilter
 from itertools import product
 from typing import Optional, Dict, Any, List
 
+from pydantic_core import Url
+
 # 忽略 FutureWarning
 simplefilter(action='ignore', category=FutureWarning)
 
@@ -724,11 +726,25 @@ def extract_dos_info(task_directory: str, plot_dos: bool = True) -> dict:
 
 # ============ MCP 工具 ============
 
+
+
+"""
+!!!
+工具的返回值必须是{"args":dict, "returns":dict}
+工具的返回值必须是{"args":dict, "returns":dict}
+工具的返回值必须是{"args":dict, "returns":dict}
+工具的返回值必须是{"args":dict, "returns":dict}
+工具的返回值必须是{"args":dict, "returns":dict}
+!!!
+"""
+
 # ----- 基础工具 -----
 @mcp.tool()
-async def get_time() -> str:
+async def get_time() -> dict:
     """获取当前时间，返回格式：YYYY-MM-DD HH:MM:SS"""
-    return pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+    args = {}
+    result = {"time": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")}
+    return {"args": args, "returns": result}
 
 
 @mcp.tool()
@@ -742,11 +758,12 @@ async def get_material_project_page(material_id: str) -> dict:
     Returns:
         dict: 包含 material_id, url, message, error(可选)
     """
+    args = {"material_id": material_id}
     if not material_id:
-        return {"error": "材料ID不能为空", "message": "请提供有效的材料ID"}
+        return {"args": args, "returns": {"error": "材料ID不能为空", "message": "请提供有效的材料ID"}}
     
     url = f"https://next-gen.materialsproject.org/materials/{material_id}/"
-    return {"material_id": material_id, "url": url, "message": f"获取材料 {material_id} 的Material Project页面链接成功"}
+    return {"args": args, "returns": {"url": url}}
 
 
 @mcp.tool()
@@ -760,21 +777,21 @@ async def read_file(file_path: str) -> dict:
     Returns:
         dict: 包含 success, content, file_path, error(可选)
     """
+    args = {"file_path": file_path}
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
         
-        return {
+        return {"args": args, "returns": {
             "success": True,
             "content": content,
-            "file_path": file_path
-        }
+        }}
     except FileNotFoundError:
-        return {"success": False, "error": f"文件未找到: {file_path}", "file_path": file_path}
+        return {"args": args, "returns": {"success": False, "error": f"文件未找到: {file_path}"}}
     except PermissionError:
-        return {"success": False, "error": f"权限不足: {file_path}", "file_path": file_path}
+        return {"args": args, "returns": {"success": False, "error": f"权限不足: {file_path}"}}
     except Exception as e:
-        return {"success": False, "error": f"读取文件时出错: {str(e)}", "file_path": file_path}
+        return {"args": args, "returns": {"success": False, "error": f"读取文件时出错: {str(e)}"}}
 
 
 # ----- OQMD 数据库工具 -----
@@ -799,6 +816,18 @@ async def search_materials_from_oqmd(
     Returns:
         Dict: OQMD搜索结果
     """
+    args = {}
+    if elements is not None:
+        args["elements"] = elements
+    if band_gap_min is not None:
+        args["band_gap_min"] = band_gap_min
+    if band_gap_max is not None:
+        args["band_gap_max"] = band_gap_max
+    if stability_max != 0.1:
+        args["stability_max"] = stability_max
+    if limit != 20:
+        args["limit"] = limit
+    
     filter_parts = []
     
     if elements:
@@ -821,7 +850,7 @@ async def search_materials_from_oqmd(
     
     fields = ["name", "entry_id", "band_gap", "delta_e", "stability", "spacegroup", "ntypes"]
     
-    return oqmd.search_oqmd(
+    result = oqmd.search_oqmd(
         fields=fields,
         filter_expr=filter_expr,
         limit=limit,
@@ -829,6 +858,7 @@ async def search_materials_from_oqmd(
         sort_by="stability",
         desc=False
     )
+    return {"args": args, "returns": result}
 
 
 @mcp.tool()
@@ -852,6 +882,7 @@ async def get_material_structure_from_oqmd(
     Returns:
         dict | list: 包含 structure_dict, image_url(可选), message, error(可选)
     """
+    args = {"entry_id": entry_id, "mode": mode, "get_sites": get_sites, "get_plot": get_plot, "download": download}
     res = oqmd.parse_poscar_with_pymatgen(entry_id, mode)
     message = []
     if res["success"]:
@@ -895,14 +926,14 @@ async def get_material_structure_from_oqmd(
             res = get_structure_plot(structure)
             if not res["error"]:
                 image = res["Image"]
-                return {"image_url": image, "structure_dict": structure_info, "message": message}
+                return {"args": args, "returns": {"image_url": image, "structure_dict": structure_info, "message": message}}
             else:
                 message.append(res["error"])
-                return {"structure_dict": structure_info, "message": message}
+                return {"args": args, "returns": {"structure_dict": structure_info, "message": message}}
 
-        return {"structure_dict": structure_info, "message": message}
+        return {"args": args, "returns": {"structure_dict": structure_info, "message": message}}
     else:
-        return {"error": res["error"], "message": "构建晶体结构失败"}
+        return {"args": args, "returns": {"error": res["error"], "message": "构建晶体结构失败"}}
 
 
 # ----- Material Project 工具 -----
@@ -915,7 +946,7 @@ async def search_materials_from_mp(
     num_elements: tuple[int, int] | None = None,
     formula: str | list[str] | None = None,
     chunk_size: int | None = 25
-) -> list[dict]:
+) -> dict:
     """
     Material Project数据查询工具
     
@@ -931,15 +962,29 @@ async def search_materials_from_mp(
     Returns:
         list[dict]: 材料列表或错误信息
     """
+    args = {}
+    if elements is not None:
+        args["elements"] = elements
+    if exclude_elements is not None:
+        args["exclude_elements"] = exclude_elements
+    if chemsys is not None:
+        args["chemsys"] = chemsys
+    if band_gap is not None:
+        args["band_gap"] = band_gap
+    if num_elements is not None:
+        args["num_elements"] = num_elements
+    if formula is not None:
+        args["formula"] = formula
+    if chunk_size is not None and chunk_size != 25:
+        args["chunk_size"] = chunk_size
+    
     API_KEY = MY_API_KEY
     if not API_KEY:
         raise ValueError("API密钥未设置")
     try:
         with MPRester(API_KEY) as mpr:
-            # 使用新的 API 格式: MPRester.materials.summary
             search_kwargs = {}
             
-            # 直接传递参数（新 API 支持这些参数）
             if elements:
                 search_kwargs["elements"] = elements
             if exclude_elements:
@@ -953,25 +998,27 @@ async def search_materials_from_mp(
             if formula:
                 search_kwargs["formula"] = formula
             
-            # 设置返回字段和限制
             search_kwargs["fields"] = ["material_id", "formula_pretty", "band_gap", "symmetry"]
-            # 新版本使用 _search 方法支持 chunk_size/num_chunks
-            # 或者使用 search 方法配合 chunk_size
             chunk_sz = chunk_size if chunk_size else 25
             
             results = mpr.materials.summary.search(**search_kwargs, chunk_size=chunk_sz, num_chunks=1)
             print(f"查询到 {len(results)} 个材料")
-        return [{
-            "material_id": r.material_id,
-            "formula_pretty": r.formula_pretty,
-            "band_gap": r.band_gap,
-            "symmetry": r.symmetry,
-        } for r in results]
+            data = {
+                "data": [
+                    {
+                        "formula": r.formula_pretty,
+                        "material_id": r.material_id,
+                        "symmetry": r.symmetry,
+                        "band_gap": r.band_gap
+                    } for r in results
+                ]
+            }
+        return {"args": args, "returns": data}
     except Exception as e:
         import traceback
         print(f"[ERROR] search_materials_from_mp: {e}")
         print(traceback.format_exc())
-        return {"error": str(e), "message": "查询材料数据失败"}
+        return {"args": args, "returns": {"error": str(e), "message": "查询材料数据失败"}}
 
 
 @mcp.tool()
@@ -985,6 +1032,7 @@ async def get_band_gap(material_id: str) -> dict:
     Returns:
         dict: 包含 material_id, band_gap, formula, error(可选)
     """
+    args = {"material_id": material_id}
     API_KEY = MY_API_KEY
     if not API_KEY:
         raise ValueError("MP_API_KEY环境变量未设置")
@@ -1000,9 +1048,9 @@ async def get_band_gap(material_id: str) -> dict:
                 print(f"获取材料 {material_id} 的带隙值成功")
             band_gap = results[0].band_gap
             formula = results[0].formula_pretty
-        return {"material_id": material_id, "band_gap": band_gap, "formula": formula}
+        return {"args": args, "returns": {"band_gap": band_gap}}
     except Exception as e:
-        return {"error": str(e), "message": f"获取材料 {material_id} 的带隙值失败"}
+        return {"args": args, "returns": {"error": str(e), "message": f"获取材料 {material_id} 的带隙值失败"}}
 
 
 @mcp.tool()
@@ -1024,6 +1072,7 @@ async def get_material_structure_from_mp(
     Returns:
         dict | list: 包含 structure_dict, image_url(可选), message, error(可选)
     """
+    args = {"material_id": material_id, "get_sites": get_sites, "get_plot": get_plot, "download": download}
     API_KEY = MY_API_KEY
     if not API_KEY:
         raise ValueError("MP_API_KEY环境变量未设置")
@@ -1055,13 +1104,15 @@ async def get_material_structure_from_mp(
                 'density': round(structure.density, 4),
                 'is_ordered': structure.is_ordered,
             }
-            message.append(f"材料 {material_id} 的晶体结构信息: {structure_info}")
+            message.append(f"材料 {material_id} 的晶体结构信息: formula={formula}, space_group={space_group_info[0] if space_group_info else '未知'}")
             if get_sites:
-                structure_info['sites'] = [{
+                sites_data = [{
                     'element': site.species_string,
                     'fractional_coordinates': [round(coord, 4) for coord in site.frac_coords],
                 } for site in structure.sites]
-                message.append(f"材料 {material_id} 的原子位点信息已包含在返回结果中")
+                structure_info['sites'] = sites_data
+                structure_info['sites_count'] = len(structure.sites)
+                message.append(f"材料 {material_id} 的原子位点信息已包含在返回结果中，共{len(structure.sites)}个)")
             if download:
                 CifWriter(structure).write_file(f"cifs/{reduced_formula}-{material_id}.cif")
                 print(f"获取材料 {material_id} 的晶体结构成功，已保存为cif文件")
@@ -1074,27 +1125,25 @@ async def get_material_structure_from_mp(
                 if not res["error"]:
                     image = res["Image"]
                     return {
-                        "image_url": image, 
-                        "3d_image_url": structure_url,
-                        "structure_dict": structure_info, 
-                        "message": message
+                        "args": args,
+                        "returns": {"image_url": image, "3d_image_url": structure_url, "structure_dict": structure_info, "message": message}
                     }
                 else:
                     message.append(res["error"])
                     return {
-                        "3d_image_url": structure_url,
-                        "structure_dict": structure_info, 
-                        "message": message
+                        "args": args,
+                        "returns": {"3d_image_url": structure_url, "structure_dict": structure_info, "message": message}
                     }
 
-        return {"structure_dict": structure_info, "message": message}
+        return {"args": args, "returns": {"structure_dict": structure_info, "message": message}}
     except Exception as e:
-        return {"error": str(e), "message": f"获取材料 {material_id} 的晶体结构失败"}
+        return {"args": args, "returns": {"error": str(e), "message": f"获取材料 {material_id} 的晶体结构失败"}}
 
 
 @mcp.tool()
 async def get_material_all_infomation_by_id(material_id: str) -> dict:
     """获取Material Project指定材料的所有信息"""
+    args = {"material_id": material_id}
     API_KEY = MY_API_KEY
     if not API_KEY:
         raise ValueError("MP_API_KEY环境变量未设置")
@@ -1108,9 +1157,9 @@ async def get_material_all_infomation_by_id(material_id: str) -> dict:
                 else:
                     print(f"获取材料 {material_id} 的所有信息成功")
             material_dict = material[0]
-        return material_dict
+        return {"args": args, "returns": material_dict}
     except Exception as e:
-        return {"error": str(e), "message": f"获取材料 {material_id} 的所有信息失败"}
+        return {"args": args, "returns": {"error": str(e), "message": f"获取材料 {material_id} 的所有信息失败"}}
 
 
 # ----- 结构建模工具 -----
@@ -1148,6 +1197,10 @@ async def build_structure(
     Returns:
         dict | list: 包含 image, 3d_image_url, message, error(可选)
     """
+    args = {"a": a, "b": b, "c": c, "alpha": alpha, "beta": beta, "gamma": gamma, "elements": elements, "frac_coord": frac_coord, "scaling_matrix": scaling_matrix, "save_to_cif": save_to_cif}
+    if add_to_database is not None:
+        args["add_to_database"] = add_to_database
+    
     try:
         lattice = Lattice.from_parameters(a, b, c, alpha, beta, gamma)
         structure = Structure(lattice, elements, frac_coord)
@@ -1173,19 +1226,18 @@ async def build_structure(
         if not res["error"]:
             image = res["Image"]
             return {
-                "image": image,
-                "3d_image_url": structure_url,
-                "message": message
+                "args": args,
+                "returns": {"image": image, "3d_image_url": structure_url, "message": message}
             }
         else:
             message.append(res["error"])
             return {
-                "3d_image_url": structure_url,
-                "message": message
+                "args": args,
+                "returns": {"3d_image_url": structure_url, "message": message}
             }
 
     except Exception as e:
-        return {"error": str(e), "message": "构建晶体结构失败"}
+        return {"args": args, "returns": {"error": str(e), "message": "构建晶体结构失败"}}
 
 
 # ----- VASP 任务管理工具 -----
@@ -1201,6 +1253,7 @@ async def create_task(formula: str, cif_path: str) -> dict:
     Returns:
         dict: 包含 message, task_directory, error(可选)
     """
+    args = {"formula": formula, "cif_path": cif_path}
     try:
         with connection as vasp_task:
             base_dir = config.get_base_dir()
@@ -1212,11 +1265,11 @@ async def create_task(formula: str, cif_path: str) -> dict:
                 if result:
                     break
             if result:
-                return {"message": f"任务目录已创建并上传CIF文件", "task_directory": result}
+                return {"args": args, "returns": {"message": f"任务目录已创建并上传CIF文件", "task_directory": result}}
             else:
-                return {"error": "任务创建失败", "message": "请再试一次"}
+                return {"args": args, "returns": {"error": "任务创建失败", "message": "请再试一次"}}
     except Exception as e:
-        return {"error": str(e), "message": "任务创建失败"}
+        return {"args": args, "returns": {"error": str(e), "message": "任务创建失败"}}
 
 
 @mcp.tool()
@@ -1224,6 +1277,7 @@ async def list_task_directories() -> dict:
     """
     列出远程服务器上的所有任务目录
     """
+    args = {}
     try:
         with connection as vasp_task:
             base_dir = config.get_base_dir()
@@ -1235,11 +1289,11 @@ async def list_task_directories() -> dict:
                 if result:
                     break
             if result:
-                return {"task_directories": result}
+                return {"args": args, "returns": {"task_directories": result}}
             else:
-                return {"error": "获取任务目录失败", "message": "请检查服务器连接是否正常"}
+                return {"args": args, "returns": {"error": "获取任务目录失败", "message": "请检查服务器连接是否正常"}}
     except Exception as e:
-        return {"error": str(e), "message": "获取任务目录失败"}
+        return {"args": args, "returns": {"error": str(e), "message": "获取任务目录失败"}}
 
 
 @mcp.tool()
@@ -1247,6 +1301,7 @@ async def check_squeue() -> dict:
     """
     检查远程服务器上的任务队列
     """
+    args = {}
     try:
         with connection as vasp_task:
             result = None
@@ -1255,11 +1310,11 @@ async def check_squeue() -> dict:
                 if result:
                     break
             if result:
-                return {"squeue": result}
+                return {"args": args, "returns": {"squeue": result}}
             else:
-                return {"error": "检查任务队列失败", "message": "请检查服务器连接是否正常"}
+                return {"args": args, "returns": {"error": "检查任务队列失败", "message": "请检查服务器连接是否正常"}}
     except Exception as e:
-        return {"error": str(e), "message": "检查任务队列失败"}
+        return {"args": args, "returns": {"error": str(e), "message": "检查任务队列失败"}}
 
 
 @mcp.tool()
@@ -1273,12 +1328,13 @@ async def execute_command(command: str) -> dict:
     Returns:
         dict: 命令执行结果或错误信息
     """
+    args = {"command": command}
     try:
         with connection as vasp_task:
             result = vasp_task.execute_command(command)
-            return result
+            return {"args": args, "returns": result}
     except Exception as e:
-        return {"error": str(e), "message": "命令提交或执行失败"}
+        return {"args": args, "returns": {"error": str(e), "message": "命令提交或执行失败"}}
 
 
 @mcp.tool()
@@ -1296,14 +1352,15 @@ async def extract_file(file_path: str) -> dict:
             - error: 错误信息（如果有）
             - message: 操作结果消息
     """
+    args = {"file_path": file_path}
     try:
         with connection as vasp_task:
             result = vasp_task.extract_file(file_path=file_path)
             download_url = matfileserver.add_image_file(result["local_file"])
             result["download_url"] = download_url
-            return result
+            return {"args": args, "returns": result}
     except Exception as e:
-        return {"error": str(e), "message": "命令提交或执行失败"}
+        return {"args": args, "returns": {"error": str(e), "message": "提取文件失败"}}
 
 
 @mcp.tool()
@@ -1318,6 +1375,7 @@ async def create_mission(task_directory: str, mission: str) -> dict:
     Returns:
         dict: 包含 success, mission, task_directory, raw_result, error(可选)
     """
+    args = {"task_directory": task_directory, "mission": mission}
     mission = mission.lower().strip()
     method_map = {
         "relax": "create_relax_mission",
@@ -1327,10 +1385,7 @@ async def create_mission(task_directory: str, mission: str) -> dict:
     }
     
     if mission not in method_map:
-        return {
-            "success": False,
-            "error": f"未知的计算类型: {mission}，可选: {list(method_map.keys())}"
-        }
+        return {"args": args, "returns": {"success": False, "error": f"未知的计算类型: {mission}，可选: {list(method_map.keys())}"}}
     
     try:
         with connection as vasp_task:
@@ -1349,15 +1404,10 @@ async def create_mission(task_directory: str, mission: str) -> dict:
             if not success:
                 response["error"] = result.get("error") or result.get("message") or "创建任务失败"
             
-            return response
+            return {"args": args, "returns": response}
             
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "mission": mission,
-            "task_directory": task_directory
-        }
+        return {"args": args, "returns": {"success": False, "error": str(e)}}
 
 
 @mcp.tool()
@@ -1372,6 +1422,7 @@ async def submit_mission(task_directory: str, mission: str) -> dict:
     Returns:
         dict: 包含 success, mission, task_directory, job_id(可选), message, raw_result, error(可选)
     """
+    args = {"task_directory": task_directory, "mission": mission}
     mission = mission.lower().strip()
     method_map = {
         "relax": "submit_relax_calculation",
@@ -1381,10 +1432,7 @@ async def submit_mission(task_directory: str, mission: str) -> dict:
     }
     
     if mission not in method_map:
-        return {
-            "success": False,
-            "error": f"未知的计算类型: {mission}，可选: {list(method_map.keys())}"
-        }
+        return {"args": args, "returns": {"success": False, "error": f"未知的计算类型: {mission}，可选: {list(method_map.keys())}"}}
     
     try:
         with connection as vasp_task:
@@ -1409,15 +1457,10 @@ async def submit_mission(task_directory: str, mission: str) -> dict:
             else:
                 response["error"] = result.get("error") or result.get("message") or "提交任务失败"
             
-            return response
+            return {"args": args, "returns": response}
             
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "mission": mission,
-            "task_directory": task_directory
-        }
+        return {"args": args, "returns": {"success": False, "error": str(e)}}
 
 
 @mcp.tool()
@@ -1434,6 +1477,10 @@ async def modify_incar(task_directory: str, mission: str, read: bool, write: str
     Returns:
         dict: 包含 success, mission, task_directory, read_mode, incar_params(可选), updated_params(可选), message, error(可选)
     """
+    args = {"task_directory": task_directory, "mission": mission, "read": read}
+    if write is not None:
+        args["write"] = write
+    
     mission = mission.lower().strip()
     
     new_params = None
@@ -1441,16 +1488,9 @@ async def modify_incar(task_directory: str, mission: str, read: bool, write: str
         try:
             new_params = json.loads(write)
             if not isinstance(new_params, dict):
-                return {
-                    "success": False,
-                    "error": "write参数必须是JSON对象（字典）"
-                }
+                return {"args": args, "returns": {"success": False, "error": "write参数必须是JSON对象（字典）"}}
         except Exception as e:
-            return {
-                "success": False,
-                "error": f"解析write参数失败: {str(e)}",
-                "write_param": write
-            }
+            return {"args": args, "returns": {"success": False, "error": f"解析write参数失败: {str(e)}"}}
     
     try:
         with connection as vasp_task:
@@ -1480,16 +1520,10 @@ async def modify_incar(task_directory: str, mission: str, read: bool, write: str
             else:
                 response["error"] = result.get("error") or result.get("message") or "操作失败"
             
-            return response
+            return {"args": args, "returns": response}
             
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "mission": mission,
-            "task_directory": task_directory,
-            "read_mode": read
-        }
+        return {"args": args, "returns": {"success": False, "error": str(e)}}
 
 
 @mcp.tool()
@@ -1505,6 +1539,7 @@ def extract_result(task_directory: str, mission: str, plot: bool = True) -> dict
     Returns:
         dict: 包含 success, mission, task_directory, result, error(可选)
     """
+    args = {"task_directory": task_directory, "mission": mission, "plot": plot}
     mission = mission.lower().strip()
     method_map = {
         "relax": lambda: extract_relax_info(task_directory, get_plot=plot, visualize=plot),
@@ -1514,35 +1549,15 @@ def extract_result(task_directory: str, mission: str, plot: bool = True) -> dict
     }
 
     if mission not in method_map:
-        return {
-            "success": False,
-            "error": f"未知的计算类型: {mission}，可选: ['relax', 'scf', 'band', 'dos']",
-            "task_directory": task_directory,
-            "mission": mission
-        }
+        return {"args": args, "returns": {"success": False, "error": f"未知的计算类型: {mission}，可选: ['relax', 'scf', 'band', 'dos']", "task_directory": task_directory, "mission": mission}}
 
     try:
         result = method_map[mission]()
         if isinstance(result, dict) and result.get("error"):
-            return {
-                "success": False,
-                "mission": mission,
-                "task_directory": task_directory,
-                "result": result
-            }
-        return {
-            "success": True,
-            "mission": mission,
-            "task_directory": task_directory,
-            "result": result
-        }
+            return {"args": args, "returns": {"success": False, "result": result}}
+        return {"args": args, "returns": {"success": True, "result": result}}
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "mission": mission,
-            "task_directory": task_directory
-        }
+        return {"args": args, "returns": {"success": False, "error": str(e)}}
 
 
 # ----- 机器学习工具 -----
@@ -1557,15 +1572,13 @@ async def predict_band_gap(formula: str | list[str]) -> dict:
     Returns:
         dict: 包含 formula, predicted_band_gap, error(可选)
     """
+    args = {"formula": formula}
     from myml import bandgap_predict as mm
     try:
         result = mm.predict_bandgap(formula)
-        return {
-            "formula": formula,
-            "predicted_band_gap": result
-        }
+        return {"args": args, "returns": {"predicted_band_gap": result}}
     except Exception as e:
-        return {"error": str(e), "message": f"预测材料 {formula} 的带隙值失败"}
+        return {"args": args, "returns": {"error": str(e), "message": f"预测材料 {formula} 的带隙值失败"}}
 
 
 # ============ 主程序入口 ============

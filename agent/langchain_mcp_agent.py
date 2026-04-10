@@ -340,6 +340,12 @@ class MatAgentMCP:
                         tool_args = tc.get("args") or tc.get("function", {}).get("arguments") or {}
                         tool_call_id = tc.get("id")
                         
+                        # 调试输出 - 详细检查 tc 的所有字段
+                        print(f"[DEBUG] Tool call detected: name={tool_name}")
+                        print(f"[DEBUG] tc type={type(tc)}, tc={tc}")
+                        print(f"[DEBUG] tc.get('args')={tc.get('args')}")
+                        print(f"[DEBUG] msg.additional_kwargs={getattr(msg, 'additional_kwargs', None)}")
+                        
                         # 跳过无效的工具调用（id 为 None 或 name 为 unknown 且 args 为空）
                         if not tool_call_id and tool_name == "unknown":
                             continue

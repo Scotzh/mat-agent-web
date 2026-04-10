@@ -14,3 +14,7 @@ matagent-material-ai/
 temp_images/
 temp_3d/
 instance/
+.openclaw-yuanbao-backup/
+.codebuddy/
+structure_info.json
+matagent_server_history.db
