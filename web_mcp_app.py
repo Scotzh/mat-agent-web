@@ -25,6 +25,16 @@ st.set_page_config(
 # MCP Agent API 地址
 MCP_AGENT_URL = "http://127.0.0.1:8766"
 
+# ============ Logo 配置 ============
+# 方式1: 使用本地图片文件（推荐）
+LOGO_PATH = "assets/logo.png"  # 把你的 logo 放在项目根目录的 assets 文件夹中
+
+# 方式2: 使用网络图片 URL
+# LOGO_URL = "https://your-domain.com/logo.png"
+
+# 方式3: 使用 base64 编码的图片（内嵌）
+# LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg..."
+
 # 初始化数据库
 import databasemanage
 if "db" not in st.session_state:
@@ -43,16 +53,58 @@ if "mcp_connected" not in st.session_state:
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = "deepseek-chat"
 
+# ============ Logo 显示函数 ============
+def show_logo():
+    """在页面顶部显示 Logo"""
+    try:
+        # 方式1: 本地图片
+        if os.path.exists(LOGO_PATH):
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                st.image(LOGO_PATH, use_container_width=True)
+            return
+        
+        # 方式2: 网络图片 URL（取消下面的注释）
+        # if 'LOGO_URL' in globals():
+        #     col1, col2, col3 = st.columns([1, 2, 1])
+        #     with col2:
+        #         st.image(LOGO_URL, use_container_width=True)
+        #     return
+        
+        # 方式3: Base64 编码图片（取消下面的注释）
+        # if 'LOGO_BASE64' in globals():
+        #     col1, col2, col3 = st.columns([1, 2, 1])
+        #     with col2:
+        #         st.image(LOGO_BASE64, use_container_width=True)
+        #     return
+        
+        # 如果没有找到 logo，显示默认标题
+        st.markdown('<h1 class="main-title">🔬 MatAgent MCP</h1>', unsafe_allow_html=True)
+        
+    except Exception as e:
+        # 出错时显示默认标题
+        st.markdown('<h1 class="main-title">🔬 MatAgent MCP</h1>', unsafe_allow_html=True)
+
+
 # ============ 自定义样式 ============
 st.markdown("""
 <style>
+    /* Logo 容器样式 */
+    .logo-container {
+        text-align: center;
+        padding: 1rem 0;
+        margin-bottom: 0.5rem;
+    }
+    
     /* 主标题样式 */
     .main-title {
         font-size: 2.5rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
+        color: transparent;
         text-align: center;
         padding: 1rem 0;
         margin-bottom: 0.5rem;
@@ -436,7 +488,14 @@ def rename_session(session_id: str, new_name: str):
 
 def sidebar():
     with st.sidebar:
-        st.markdown('<div class="sidebar-header">🔬 MatAgent MCP</div>', unsafe_allow_html=True)
+        # 侧边栏 Logo（小尺寸）
+        try:
+            if os.path.exists(LOGO_PATH):
+                st.image(LOGO_PATH, use_container_width=True)
+            else:
+                st.markdown('<div class="sidebar-header">🔬 MatAgent MCP</div>', unsafe_allow_html=True)
+        except:
+            st.markdown('<div class="sidebar-header">🔬 MatAgent MCP</div>', unsafe_allow_html=True)
         
         # 连接状态
         if check_mcp_server():
@@ -678,6 +737,7 @@ def display_tool_result(tr: dict):
 
 
 def chat_page():
+    # 只显示副标题（Logo 只在侧边栏显示）
     st.markdown('<h1 class="main-title">💬 MatAgent材料智能设计平台</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">基于 MCP 协议的材料科学智能助手</p>', unsafe_allow_html=True)
     

@@ -1,27 +1,27 @@
 {
   "info": {
-    "2bab9596-1964-465a-bca9-d4936e0d35c6": {
-      "id": "2bab9596-1964-465a-bca9-d4936e0d35c6",
-      "reduced_formula": "Sr(ZnGe)2",
-      "full_formula": "Sr2 Zn4 Ge4",
-      "space_group_symbol": "I4/mmm",
-      "space_group_number": 139,
-      "num_sites": 10,
+    "ae1732ba-620a-45cb-be4e-e1c83552c2eb": {
+      "id": "ae1732ba-620a-45cb-be4e-e1c83552c2eb",
+      "reduced_formula": "NaCl",
+      "full_formula": "Na4 Cl4",
+      "space_group_symbol": "Pm-3m",
+      "space_group_number": 221,
+      "num_sites": 8,
       "is_ordered": true,
-      "density": 5.9556,
-      "html_file": "121134c905f04700be228e5c77fe3f4c.html",
+      "density": 0.7764,
+      "html_file": "16be1e269ca3427e828df7c6d667366d.html",
       "lattice": {
-        "a": 4.3898,
-        "b": 4.3898,
-        "c": 10.525,
+        "a": 5.0,
+        "b": 10.0,
+        "c": 10.0,
         "alpha": 90.0,
         "beta": 90.0,
         "gamma": 90.0,
-        "volume": 202.82
+        "volume": 500.0
       },
       "sites": [
         {
-          "element": "Sr",
+          "element": "Na",
           "coords": [
             0.0,
             0.0,
@@ -29,1153 +29,523 @@
           ]
         },
         {
-          "element": "Sr",
+          "element": "Na",
           "coords": [
+            0.0,
+            0.0,
+            0.5
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
             0.5,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
             0.5,
             0.5
           ]
         },
         {
-          "element": "Zn",
-          "coords": [
-            0.0,
-            0.5,
-            0.75
-          ]
-        },
-        {
-          "element": "Zn",
+          "element": "Cl",
           "coords": [
             0.5,
-            0.0,
-            0.75
-          ]
-        },
-        {
-          "element": "Zn",
-          "coords": [
-            0.5,
-            0.0,
+            0.25,
             0.25
           ]
         },
         {
-          "element": "Zn",
+          "element": "Cl",
           "coords": [
-            0.0,
             0.5,
+            0.25,
+            0.75
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.5,
+            0.75,
             0.25
           ]
         },
         {
-          "element": "Ge",
-          "coords": [
-            0.0,
-            0.0,
-            0.6204
-          ]
-        },
-        {
-          "element": "Ge",
+          "element": "Cl",
           "coords": [
             0.5,
-            0.5,
-            0.8796
-          ]
-        },
-        {
-          "element": "Ge",
-          "coords": [
-            0.5,
-            0.5,
-            0.1204
-          ]
-        },
-        {
-          "element": "Ge",
-          "coords": [
-            0.0,
-            0.0,
-            0.3796
+            0.75,
+            0.75
           ]
         }
       ]
     },
-    "3156b056-e303-4dbd-9efa-406bf58760ba": {
-      "id": "3156b056-e303-4dbd-9efa-406bf58760ba",
-      "reduced_formula": "V2O5",
-      "full_formula": "V30 O75",
-      "space_group_symbol": "P1",
-      "space_group_number": 1,
-      "num_sites": 105,
+    "21625391-4f26-4e4c-a681-71b8525b247b": {
+      "id": "21625391-4f26-4e4c-a681-71b8525b247b",
+      "reduced_formula": "Ag3AuSeS",
+      "full_formula": "Ag24 Au8 Se8 S8",
+      "space_group_symbol": "I2_13",
+      "space_group_number": 199,
+      "num_sites": 48,
       "is_ordered": true,
-      "density": 2.8128,
-      "html_file": "e0b48f11ecf249b1843e726297eebc61.html",
+      "density": 8.3795,
+      "html_file": "25295f1c41a844b88726281be4aa4032.html",
       "lattice": {
-        "a": 11.6164,
-        "b": 11.7571,
-        "c": 11.9682,
-        "alpha": 91.34,
-        "beta": 94.37,
-        "gamma": 98.57,
-        "volume": 1610.6
+        "a": 10.0043,
+        "b": 10.0043,
+        "c": 10.0043,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 1001.29
       },
       "sites": [
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.1943,
-            0.523,
-            0.996
+            0.387,
+            -0.0,
+            0.25
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.452,
-            0.7822,
-            0.726
+            0.113,
+            -0.0,
+            0.75
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.8595,
-            0.1328,
-            0.7023
+            0.3782,
+            0.5,
+            0.75
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.0647,
-            0.2499,
-            0.5212
+            0.1218,
+            0.5,
+            0.25
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.8306,
-            0.6672,
-            0.1916
+            0.0,
+            0.75,
+            0.113
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.601,
-            0.1768,
-            0.3785
+            0.0,
+            0.25,
+            0.387
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.2518,
-            0.2449,
-            0.0935
+            0.5,
+            0.25,
+            0.1218
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.5445,
-            0.1378,
-            0.7152
+            0.5,
+            0.75,
+            0.3782
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.3522,
-            0.0471,
-            0.926
+            0.25,
+            0.387,
+            -0.0
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.7887,
-            0.5869,
-            0.7725
+            0.75,
+            0.113,
+            -0.0
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.3457,
-            0.6407,
-            0.2426
+            0.75,
+            0.3782,
+            0.5
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.8684,
-            0.2616,
-            0.0948
+            0.25,
+            0.1218,
+            0.5
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.8986,
-            0.978,
-            0.4416
+            0.887,
+            0.5,
+            0.75
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.165,
-            0.8408,
-            0.702
+            0.613,
+            0.5,
+            0.25
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.7433,
-            0.7216,
-            0.5144
+            0.8782,
+            -0.0,
+            0.25
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.2767,
-            0.0761,
-            0.5369
+            0.6218,
+            -0.0,
+            0.75
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.9031,
-            0.862,
-            0.8431
+            0.5,
+            0.25,
+            0.613
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.5308,
-            0.0422,
-            0.1343
+            0.5,
+            0.75,
+            0.887
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.4168,
-            0.5686,
-            0.5163
+            0.0,
+            0.75,
+            0.6218
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.6549,
-            0.4247,
-            0.5111
+            0.0,
+            0.25,
+            0.8782
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.6108,
-            0.7702,
-            0.1625
+            0.75,
+            0.887,
+            0.5
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.1327,
-            0.022,
-            0.2709
+            0.25,
+            0.613,
+            0.5
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.8364,
-            0.966,
-            0.1128
+            0.25,
+            0.8782,
+            -0.0
           ]
         },
         {
-          "element": "V",
+          "element": "Ag",
           "coords": [
-            0.1758,
-            0.4526,
-            0.393
+            0.75,
+            0.6218,
+            -0.0
           ]
         },
         {
-          "element": "V",
+          "element": "Au",
           "coords": [
-            0.9316,
-            0.4871,
-            0.4298
+            0.1238,
+            0.1238,
+            0.1238
           ]
         },
         {
-          "element": "V",
+          "element": "Au",
           "coords": [
-            0.9233,
-            0.3611,
-            0.8955
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.5361,
-            0.9146,
-            0.5092
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.5821,
-            0.5468,
-            0.9763
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.6863,
-            0.4362,
-            0.2192
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.1035,
-            0.7759,
-            0.1135
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.001,
-            0.2131,
-            0.6428
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.1817,
-            0.9143,
-            0.1987
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6961,
-            0.4633,
-            0.6443
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8871,
-            0.4987,
-            0.7822
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0516,
-            0.5094,
-            0.3324
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6332,
-            0.9375,
-            0.1395
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2378,
-            0.7167,
-            0.2455
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5162,
-            0.9107,
-            0.6581
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.628,
-            0.8043,
-            0.4922
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5271,
-            0.7809,
-            0.8451
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0445,
-            0.8443,
-            0.0115
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6899,
-            0.5877,
-            0.4561
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7957,
-            0.4027,
-            0.4558
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.9746,
-            0.992,
-            0.1702
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3788,
-            0.2803,
-            0.1589
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7977,
-            0.6057,
-            0.0681
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.87,
-            0.7091,
-            0.8566
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.9677,
-            0.2494,
-            0.9782
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6701,
-            0.6615,
-            0.2401
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0316,
-            0.4002,
-            0.5108
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0433,
-            0.4698,
-            0.9426
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.276,
-            0.4947,
-            0.2965
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0359,
-            0.9633,
-            0.3734
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2536,
-            0.06,
-            0.3896
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.265,
-            0.5222,
-            0.5193
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6034,
-            0.046,
-            0.4599
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5906,
-            0.463,
-            0.0982
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8662,
-            0.2762,
-            0.7717
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4318,
-            0.6431,
-            0.3972
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2061,
-            0.3735,
-            0.049
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.466,
-            0.0768,
-            0.8329
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4089,
-            0.8783,
-            0.4419
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.9856,
-            0.7193,
-            0.1952
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.1518,
-            0.6669,
-            0.0369
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4955,
-            0.4554,
-            0.5082
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4592,
-            0.4945,
-            0.9117
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6009,
-            0.3718,
-            0.3151
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.1667,
-            0.1486,
-            0.1924
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.04,
-            0.8706,
-            0.7744
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8071,
-            0.1135,
-            0.102
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3305,
-            0.5809,
-            0.1088
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8563,
-            0.0357,
-            0.572
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7655,
-            0.6835,
-            0.6531
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8149,
-            0.3729,
-            0.9822
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.982,
-            0.1532,
-            0.4333
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.498,
-            0.1062,
-            0.2649
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8431,
-            0.9232,
-            0.9745
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2054,
-            0.1877,
-            0.5732
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.604,
-            0.271,
-            0.5051
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7868,
-            0.8191,
-            0.1698
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8017,
+            0.1238,
             0.8762,
-            0.747
+            0.3762
           ]
         },
         {
-          "element": "O",
+          "element": "Au",
           "coords": [
-            0.207,
-            0.9551,
-            0.6037
+            0.3762,
+            0.1238,
+            0.8762
           ]
         },
         {
-          "element": "O",
+          "element": "Au",
           "coords": [
-            0.679,
-            0.5464,
-            0.8635
+            0.8762,
+            0.3762,
+            0.1238
           ]
         },
         {
-          "element": "O",
+          "element": "Au",
           "coords": [
-            0.4781,
-            0.7603,
-            0.2201
+            0.6238,
+            0.6238,
+            0.6238
           ]
         },
         {
-          "element": "O",
+          "element": "Au",
           "coords": [
-            0.2546,
-            0.5414,
-            0.8802
+            0.6238,
+            0.3762,
+            0.8762
           ]
         },
         {
-          "element": "O",
+          "element": "Au",
           "coords": [
-            0.5806,
-            0.149,
-            0.0603
+            0.8762,
+            0.6238,
+            0.3762
           ]
         },
         {
-          "element": "O",
+          "element": "Au",
           "coords": [
-            0.8041,
-            0.9913,
-            0.3375
+            0.3762,
+            0.8762,
+            0.6238
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.9191,
-            0.066,
-            0.8046
+            0.2676,
+            0.2676,
+            0.2676
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.1092,
-            0.7326,
-            0.6211
+            0.7676,
+            0.2324,
+            0.7324
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.4699,
-            0.6586,
-            0.6382
+            0.7324,
+            0.7676,
+            0.2324
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.3986,
-            0.978,
-            0.0517
+            0.2324,
+            0.7324,
+            0.7676
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.554,
-            0.2733,
-            0.7434
+            0.7676,
+            0.7676,
+            0.7676
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.9352,
-            0.6058,
-            0.5017
+            0.2676,
+            0.7324,
+            0.2324
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.6908,
-            0.109,
-            0.7071
+            0.2324,
+            0.2676,
+            0.7324
           ]
         },
         {
-          "element": "O",
+          "element": "Se",
           "coords": [
-            0.7274,
-            0.1889,
-            0.3311
+            0.7324,
+            0.2324,
+            0.2676
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.5767,
-            0.6938,
-            0.0345
+            0.9865,
+            0.0135,
+            0.5135
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.9673,
-            0.2981,
-            0.1969
+            0.4865,
+            0.4865,
+            0.4865
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.4239,
-            0.1059,
-            0.593
+            0.5135,
+            0.9865,
+            0.0135
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.8602,
-            0.8176,
-            0.4645
+            0.0135,
+            0.5135,
+            0.9865
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.2772,
-            0.1613,
-            0.9691
+            0.4865,
+            0.5135,
+            0.0135
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.1742,
-            0.3081,
-            0.3993
+            0.9865,
+            0.9865,
+            0.9865
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.7491,
-            0.3279,
-            0.1687
+            0.0135,
+            0.4865,
+            0.5135
           ]
         },
         {
-          "element": "O",
+          "element": "S",
           "coords": [
-            0.2506,
-            0.9537,
-            0.8584
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8233,
-            0.534,
-            0.28
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3036,
-            0.7857,
-            0.7452
+            0.5135,
+            0.0135,
+            0.4865
           ]
         }
       ]
     },
-    "2213d881-6278-4183-8568-e1ff3fe23084": {
-      "id": "2213d881-6278-4183-8568-e1ff3fe23084",
-      "reduced_formula": "V2O3",
-      "full_formula": "V8 O12",
-      "space_group_symbol": "C2/c",
-      "space_group_number": 15,
-      "num_sites": 20,
+    "4091bd36-b906-40b4-8e40-9008ec3c8e5f": {
+      "id": "4091bd36-b906-40b4-8e40-9008ec3c8e5f",
+      "reduced_formula": "LuAl2",
+      "full_formula": "Lu8 Al16",
+      "space_group_symbol": "Fd-3m",
+      "space_group_number": 227,
+      "num_sites": 24,
       "is_ordered": true,
-      "density": 4.95,
-      "html_file": "d2d0cc9b6cb64de8ab1f3f1c8433f595.html",
+      "density": 6.6296,
+      "html_file": "7db230f08556474da3bcf6010003c716.html",
       "lattice": {
-        "a": 8.7401,
-        "b": 4.9298,
-        "c": 5.524,
-        "alpha": 90.0,
-        "beta": 122.33,
-        "gamma": 90.0,
-        "volume": 201.12
-      },
-      "sites": [
-        {
-          "element": "V",
-          "coords": [
-            0.0946,
-            0.2511,
-            0.0422
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.4054,
-            0.7511,
-            0.4578
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.4054,
-            0.2489,
-            0.9578
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.0946,
-            0.7489,
-            0.5422
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.5946,
-            0.7511,
-            0.0422
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.9054,
-            0.2511,
-            0.4578
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.9054,
-            0.7489,
-            0.9578
-          ]
-        },
-        {
-          "element": "V",
-          "coords": [
-            0.5946,
-            0.2489,
-            0.5422
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0,
-            0.938,
-            0.75
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5,
-            0.562,
-            0.25
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.1576,
-            0.5923,
-            0.2562
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3424,
-            0.9077,
-            0.7438
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.1576,
-            0.4077,
-            0.7562
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3424,
-            0.0923,
-            0.2438
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5,
-            0.438,
-            0.75
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0,
-            0.062,
-            0.25
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6576,
-            0.0923,
-            0.2562
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8424,
-            0.4077,
-            0.7438
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6576,
-            0.9077,
-            0.7562
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8424,
-            0.5923,
-            0.2438
-          ]
-        }
-      ]
-    },
-    "9d663ee0-444d-43f8-b0d1-e113e14bf971": {
-      "id": "9d663ee0-444d-43f8-b0d1-e113e14bf971",
-      "reduced_formula": "Ca(SiAu)2",
-      "full_formula": "Ca2 Si4 Au4",
-      "space_group_symbol": "I4/mmm",
-      "space_group_number": 139,
-      "num_sites": 10,
-      "is_ordered": true,
-      "density": 8.6263,
-      "html_file": "12858f2547fb48dfb7a6d84db218a00b.html",
-      "lattice": {
-        "a": 4.3333,
-        "b": 4.3333,
-        "c": 10.0502,
+        "a": 7.7123,
+        "b": 7.7123,
+        "c": 7.7123,
         "alpha": 90.0,
         "beta": 90.0,
         "gamma": 90.0,
-        "volume": 188.72
+        "volume": 458.73
       },
       "sites": [
         {
-          "element": "Ca",
+          "element": "Lu",
           "coords": [
             0.0,
-            0.0,
+            0.5,
             0.0
           ]
         },
         {
-          "element": "Ca",
+          "element": "Lu",
+          "coords": [
+            0.75,
+            0.25,
+            0.25
+          ]
+        },
+        {
+          "element": "Lu",
+          "coords": [
+            0.0,
+            0.0,
+            0.5
+          ]
+        },
+        {
+          "element": "Lu",
+          "coords": [
+            0.75,
+            0.75,
+            0.75
+          ]
+        },
+        {
+          "element": "Lu",
           "coords": [
             0.5,
             0.5,
@@ -1183,767 +553,181 @@
           ]
         },
         {
-          "element": "Si",
+          "element": "Lu",
           "coords": [
-            0.5,
-            0.5,
-            0.115
-          ]
-        },
-        {
-          "element": "Si",
-          "coords": [
-            0.0,
-            0.0,
-            0.385
-          ]
-        },
-        {
-          "element": "Si",
-          "coords": [
-            0.0,
-            0.0,
-            0.615
-          ]
-        },
-        {
-          "element": "Si",
-          "coords": [
-            0.5,
-            0.5,
-            0.885
-          ]
-        },
-        {
-          "element": "Au",
-          "coords": [
-            0.0,
-            0.5,
-            0.25
-          ]
-        },
-        {
-          "element": "Au",
-          "coords": [
-            0.5,
-            0.0,
-            0.25
-          ]
-        },
-        {
-          "element": "Au",
-          "coords": [
-            0.5,
-            0.0,
+            0.25,
+            0.25,
             0.75
           ]
         },
         {
-          "element": "Au",
+          "element": "Lu",
           "coords": [
-            0.0,
             0.5,
-            0.75
-          ]
-        }
-      ]
-    },
-    "2e77387a-4309-49a4-8d21-560cae4d908e": {
-      "id": "2e77387a-4309-49a4-8d21-560cae4d908e",
-      "reduced_formula": "Sr(SiAu)2",
-      "full_formula": "Sr2 Si4 Au4",
-      "space_group_symbol": "I4/mmm",
-      "space_group_number": 139,
-      "num_sites": 10,
-      "is_ordered": true,
-      "density": 8.9945,
-      "html_file": "599eef37c40b4b19b412baaa3f08060b.html",
-      "lattice": {
-        "a": 4.4328,
-        "b": 4.4328,
-        "c": 10.1042,
-        "alpha": 90.0,
-        "beta": 90.0,
-        "gamma": 90.0,
-        "volume": 198.55
-      },
-      "sites": [
-        {
-          "element": "Sr",
-          "coords": [
-            0.0,
             0.0,
             0.0
           ]
         },
         {
-          "element": "Sr",
+          "element": "Lu",
           "coords": [
-            0.5,
-            0.5,
-            0.5
-          ]
-        },
-        {
-          "element": "Si",
-          "coords": [
-            0.5,
-            0.5,
-            0.1175
-          ]
-        },
-        {
-          "element": "Si",
-          "coords": [
-            0.0,
-            0.0,
-            0.3825
-          ]
-        },
-        {
-          "element": "Si",
-          "coords": [
-            0.0,
-            0.0,
-            0.6175
-          ]
-        },
-        {
-          "element": "Si",
-          "coords": [
-            0.5,
-            0.5,
-            0.8825
-          ]
-        },
-        {
-          "element": "Au",
-          "coords": [
-            0.0,
-            0.5,
+            0.25,
+            0.75,
             0.25
           ]
         },
         {
-          "element": "Au",
+          "element": "Al",
           "coords": [
-            0.5,
-            0.0,
-            0.25
+            0.125,
+            0.125,
+            0.125
           ]
         },
         {
-          "element": "Au",
+          "element": "Al",
           "coords": [
-            0.5,
-            0.0,
-            0.75
+            0.625,
+            0.375,
+            0.875
           ]
         },
         {
-          "element": "Au",
+          "element": "Al",
           "coords": [
-            0.0,
-            0.5,
-            0.75
+            0.875,
+            0.125,
+            0.875
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.375,
+            0.375,
+            0.125
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.125,
+            0.625,
+            0.625
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.625,
+            0.875,
+            0.375
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.875,
+            0.625,
+            0.375
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.375,
+            0.875,
+            0.625
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.625,
+            0.125,
+            0.625
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.125,
+            0.375,
+            0.375
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.375,
+            0.125,
+            0.375
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.875,
+            0.375,
+            0.625
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.625,
+            0.625,
+            0.125
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.125,
+            0.875,
+            0.875
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.375,
+            0.625,
+            0.875
+          ]
+        },
+        {
+          "element": "Al",
+          "coords": [
+            0.875,
+            0.875,
+            0.125
           ]
         }
       ]
     },
-    "cd2937e2-e5e7-408d-b5fb-921d97cdde5a": {
-      "id": "cd2937e2-e5e7-408d-b5fb-921d97cdde5a",
-      "reduced_formula": "Sr(AgSn)2",
-      "full_formula": "Sr2 Ag4 Sn4",
-      "space_group_symbol": "I4/mmm",
-      "space_group_number": 139,
-      "num_sites": 10,
-      "is_ordered": true,
-      "density": 6.9751,
-      "html_file": "8a51ab61b8664a6a95d808f818e01c00.html",
-      "lattice": {
-        "a": 4.7101,
-        "b": 4.7101,
-        "c": 11.6062,
-        "alpha": 90.0,
-        "beta": 90.0,
-        "gamma": 90.0,
-        "volume": 257.48
-      },
-      "sites": [
-        {
-          "element": "Sr",
-          "coords": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        },
-        {
-          "element": "Sr",
-          "coords": [
-            0.5,
-            0.5,
-            0.5
-          ]
-        },
-        {
-          "element": "Ag",
-          "coords": [
-            0.0,
-            0.5,
-            0.75
-          ]
-        },
-        {
-          "element": "Ag",
-          "coords": [
-            0.5,
-            0.0,
-            0.75
-          ]
-        },
-        {
-          "element": "Ag",
-          "coords": [
-            0.5,
-            0.0,
-            0.25
-          ]
-        },
-        {
-          "element": "Ag",
-          "coords": [
-            0.0,
-            0.5,
-            0.25
-          ]
-        },
-        {
-          "element": "Sn",
-          "coords": [
-            0.5,
-            0.5,
-            0.8788
-          ]
-        },
-        {
-          "element": "Sn",
-          "coords": [
-            0.0,
-            0.0,
-            0.6212
-          ]
-        },
-        {
-          "element": "Sn",
-          "coords": [
-            0.0,
-            0.0,
-            0.3788
-          ]
-        },
-        {
-          "element": "Sn",
-          "coords": [
-            0.5,
-            0.5,
-            0.1212
-          ]
-        }
-      ]
-    },
-    "78360943-5372-4a78-98f7-18b09f655256": {
-      "id": "78360943-5372-4a78-98f7-18b09f655256",
-      "reduced_formula": "Ca(GaO2)2",
-      "full_formula": "Ca8 Ga16 O32",
-      "space_group_symbol": "P2_1/c",
-      "space_group_number": 14,
-      "num_sites": 56,
-      "is_ordered": true,
-      "density": 4.1936,
-      "html_file": "02e9645d381a4027b7f383744eef35ca.html",
-      "lattice": {
-        "a": 8.0739,
-        "b": 8.9379,
-        "c": 10.7286,
-        "alpha": 90.0,
-        "beta": 94.87,
-        "gamma": 90.0,
-        "volume": 771.42
-      },
-      "sites": [
-        {
-          "element": "Ca",
-          "coords": [
-            0.0006,
-            0.2853,
-            0.1282
-          ]
-        },
-        {
-          "element": "Ca",
-          "coords": [
-            0.9994,
-            0.7853,
-            0.3718
-          ]
-        },
-        {
-          "element": "Ca",
-          "coords": [
-            0.9994,
-            0.7147,
-            0.8718
-          ]
-        },
-        {
-          "element": "Ca",
-          "coords": [
-            0.0006,
-            0.2147,
-            0.6282
-          ]
-        },
-        {
-          "element": "Ca",
-          "coords": [
-            0.4626,
-            0.261,
-            0.1445
-          ]
-        },
-        {
-          "element": "Ca",
-          "coords": [
-            0.5374,
-            0.761,
-            0.3555
-          ]
-        },
-        {
-          "element": "Ca",
-          "coords": [
-            0.5374,
-            0.739,
-            0.8555
-          ]
-        },
-        {
-          "element": "Ca",
-          "coords": [
-            0.4626,
-            0.239,
-            0.6445
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.7651,
-            0.9418,
-            0.1302
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.2349,
-            0.4418,
-            0.3698
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.2349,
-            0.0582,
-            0.8698
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.7651,
-            0.5582,
-            0.6302
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.1754,
-            0.9441,
-            0.1382
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.8246,
-            0.4441,
-            0.3618
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.8246,
-            0.0559,
-            0.8618
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.1754,
-            0.5559,
-            0.6382
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.3006,
-            0.0955,
-            0.3898
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.6994,
-            0.5955,
-            0.1102
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.6994,
-            0.9045,
-            0.6102
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.3006,
-            0.4045,
-            0.8898
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.7091,
-            0.1083,
-            0.3832
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.2909,
-            0.6083,
-            0.1168
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.2909,
-            0.8917,
-            0.6168
-          ]
-        },
-        {
-          "element": "Ga",
-          "coords": [
-            0.7091,
-            0.3917,
-            0.8832
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.9723,
-            0.0292,
-            0.1714
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0277,
-            0.5292,
-            0.3286
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0277,
-            0.9708,
-            0.8286
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.9723,
-            0.4708,
-            0.6714
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2327,
-            0.256,
-            0.2853
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7673,
-            0.756,
-            0.2147
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7673,
-            0.744,
-            0.7147
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2327,
-            0.244,
-            0.7853
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2741,
-            0.9137,
-            0.3027
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7259,
-            0.4137,
-            0.1973
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7259,
-            0.0863,
-            0.6973
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2741,
-            0.5863,
-            0.8027
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7911,
-            0.9284,
-            0.4562
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2089,
-            0.4284,
-            0.0438
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2089,
-            0.0716,
-            0.5438
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7911,
-            0.5716,
-            0.9562
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5122,
-            0.1632,
-            0.4477
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4878,
-            0.6632,
-            0.0523
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4878,
-            0.8368,
-            0.5523
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5122,
-            0.3368,
-            0.9477
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8622,
-            0.256,
-            0.4308
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.1378,
-            0.756,
-            0.0692
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.1378,
-            0.744,
-            0.5692
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.8622,
-            0.244,
-            0.9308
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6306,
-            0.4342,
-            0.7178
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3694,
-            0.9342,
-            0.7822
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3694,
-            0.5658,
-            0.2822
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6306,
-            0.0658,
-            0.2178
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2778,
-            0.4174,
-            0.541
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7222,
-            0.9174,
-            0.959
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7222,
-            0.5826,
-            0.459
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2778,
-            0.0826,
-            0.041
-          ]
-        }
-      ]
-    },
-    "a8b30b0b-ba87-438f-a272-ab3f7e636986": {
-      "id": "a8b30b0b-ba87-438f-a272-ab3f7e636986",
-      "reduced_formula": "Fe",
-      "full_formula": "Fe2",
-      "space_group_symbol": "Im-3m",
-      "space_group_number": 229,
+    "30ba4a8a-b072-419c-beb5-a61daefb785a": {
+      "id": "30ba4a8a-b072-419c-beb5-a61daefb785a",
+      "reduced_formula": "NaCl",
+      "full_formula": "Na1 Cl1",
+      "space_group_symbol": "Pm-3m",
+      "space_group_number": 221,
       "num_sites": 2,
       "is_ordered": true,
-      "density": 7.9028,
-      "html_file": "14300f4689e042fc913cf12e9422c2cb.html",
+      "density": 0.7764,
+      "html_file": "2901c2f67f24450683f9e3396fa1c2a7.html",
       "lattice": {
-        "a": 2.863,
-        "b": 2.863,
-        "c": 2.863,
+        "a": 5.0,
+        "b": 5.0,
+        "c": 5.0,
         "alpha": 90.0,
         "beta": 90.0,
         "gamma": 90.0,
-        "volume": 23.47
+        "volume": 125.0
       },
       "sites": [
         {
-          "element": "Fe",
+          "element": "Na",
           "coords": [
             0.0,
             0.0,
@@ -1951,7 +735,7 @@
           ]
         },
         {
-          "element": "Fe",
+          "element": "Cl",
           "coords": [
             0.5,
             0.5,
@@ -1960,28 +744,28 @@
         }
       ]
     },
-    "e019b8de-a3d5-4f46-83fa-87bad5f3ddb2": {
-      "id": "e019b8de-a3d5-4f46-83fa-87bad5f3ddb2",
-      "reduced_formula": "FeO2",
-      "full_formula": "Fe4 O8",
-      "space_group_symbol": "I4_1/amd",
-      "space_group_number": 141,
+    "c2e371f0-c457-450c-98bc-6a41240534dd": {
+      "id": "c2e371f0-c457-450c-98bc-6a41240534dd",
+      "reduced_formula": "NaCl",
+      "full_formula": "Na6 Cl6",
+      "space_group_symbol": "Pm-3m",
+      "space_group_number": 221,
       "num_sites": 12,
       "is_ordered": true,
-      "density": 4.2267,
-      "html_file": "ddfc9035dad54a598bab0a155029672f.html",
+      "density": 0.7764,
+      "html_file": "e6cf4b27926d4ebba6012d249029aa5b.html",
       "lattice": {
-        "a": 3.8609,
-        "b": 3.8609,
-        "c": 9.2609,
+        "a": 30.0,
+        "b": 5.0,
+        "c": 5.0,
         "alpha": 90.0,
         "beta": 90.0,
         "gamma": 90.0,
-        "volume": 138.05
+        "volume": 750.0
       },
       "sites": [
         {
-          "element": "Fe",
+          "element": "Na",
           "coords": [
             0.0,
             0.0,
@@ -1989,768 +773,1752 @@
           ]
         },
         {
-          "element": "Fe",
+          "element": "Na",
           "coords": [
+            0.1667,
             0.0,
-            0.5,
-            0.25
+            0.0
           ]
         },
         {
-          "element": "Fe",
+          "element": "Na",
+          "coords": [
+            0.3333,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
           "coords": [
             0.5,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.6667,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.8333,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.0833,
             0.5,
             0.5
           ]
         },
         {
-          "element": "Fe",
+          "element": "Cl",
           "coords": [
+            0.25,
             0.5,
-            0.0,
-            0.75
+            0.5
           ]
         },
         {
-          "element": "O",
+          "element": "Cl",
           "coords": [
-            0.0,
+            0.4167,
             0.5,
-            0.0423
+            0.5
           ]
         },
         {
-          "element": "O",
+          "element": "Cl",
           "coords": [
-            0.0,
-            0.0,
-            0.2077
+            0.5833,
+            0.5,
+            0.5
           ]
         },
         {
-          "element": "O",
+          "element": "Cl",
           "coords": [
+            0.75,
             0.5,
-            0.5,
-            0.2923
+            0.5
           ]
         },
         {
-          "element": "O",
+          "element": "Cl",
           "coords": [
-            0.0,
+            0.9167,
             0.5,
-            0.4577
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5,
-            0.0,
-            0.5423
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5,
-            0.5,
-            0.7077
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.0,
-            0.0,
-            0.7923
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5,
-            0.0,
-            0.9577
+            0.5
           ]
         }
       ]
     },
-    "977a5508-d165-40d7-a109-b1f7501b4fe8": {
-      "id": "977a5508-d165-40d7-a109-b1f7501b4fe8",
-      "reduced_formula": "FeO",
-      "full_formula": "Fe40 O40",
+    "183550c9-11bc-4315-ae37-175e45351ff2": {
+      "id": "183550c9-11bc-4315-ae37-175e45351ff2",
+      "reduced_formula": "GaN",
+      "full_formula": "Ga50 N50",
       "space_group_symbol": "P1",
       "space_group_number": 1,
-      "num_sites": 80,
+      "num_sites": 100,
       "is_ordered": true,
-      "density": 4.3674,
-      "html_file": "c5fccdf5c6f949f7be9ae01427013318.html",
+      "density": 4.5029,
+      "html_file": "2664fe7e650e402b947808384b72639a.html",
       "lattice": {
-        "a": 9.9449,
-        "b": 10.4574,
-        "c": 10.6591,
-        "alpha": 81.22,
-        "beta": 87.57,
-        "gamma": 86.29,
-        "volume": 1092.64
+        "a": 10.7227,
+        "b": 11.3739,
+        "c": 12.6828,
+        "alpha": 87.97,
+        "beta": 88.04,
+        "gamma": 87.8,
+        "volume": 1543.84
       },
       "sites": [
         {
-          "element": "Fe",
+          "element": "Ga",
           "coords": [
-            0.1064,
-            0.1443,
-            0.115
+            0.7858,
+            0.1783,
+            0.5616
           ]
         },
         {
-          "element": "Fe",
+          "element": "Ga",
+          "coords": [
+            0.2927,
+            0.702,
+            0.5933
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.0427,
+            0.6557,
+            0.171
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.6489,
+            0.4704,
+            0.6915
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.4426,
+            0.7009,
+            0.7914
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.7334,
+            0.2806,
+            0.3444
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.7213,
+            0.2101,
+            0.1375
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.977,
+            0.3153,
+            0.5502
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.6286,
+            0.7983,
+            0.8671
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.0621,
+            0.5252,
+            0.0021
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.8951,
+            0.2756,
+            0.9807
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.0713,
+            0.0306,
+            0.9001
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.5239,
+            0.4589,
+            0.3926
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.7985,
+            0.7764,
+            0.0813
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.0966,
+            0.5058,
+            0.5906
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3938,
+            0.3148,
+            0.2722
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.7489,
+            0.9191,
+            0.6894
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.7507,
+            0.5497,
+            0.9351
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.9396,
+            0.4365,
+            0.8105
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.9522,
+            0.0264,
+            0.1188
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.9574,
+            0.0253,
+            0.4852
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3214,
+            0.4641,
+            0.922
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.8837,
+            0.6481,
+            0.7099
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3987,
+            0.3253,
+            0.7532
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.2002,
+            0.3896,
+            0.4038
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.4598,
+            0.8552,
+            0.6215
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.1861,
+            0.8932,
+            0.7012
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.3424,
+            0.4191,
+            0.5794
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.9533,
+            0.2344,
+            0.2894
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.8491,
+            0.8378,
+            0.3253
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.1687,
+            0.612,
+            0.8218
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.4791,
+            0.2428,
+            0.5065
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.1704,
+            0.1008,
+            0.0649
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.2019,
+            0.3165,
+            0.143
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.5075,
+            0.0827,
+            0.6598
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.1829,
+            0.8513,
+            0.057
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.686,
+            0.9982,
+            0.4493
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.5561,
+            0.4308,
+            0.9252
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.1936,
+            0.1599,
+            0.4787
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.9573,
+            0.1661,
+            0.7224
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.7566,
+            0.0269,
+            0.9625
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.6624,
+            0.1952,
+            0.8172
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.0461,
+            0.8252,
+            0.563
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.1339,
+            0.6118,
+            0.3703
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.361,
+            0.0359,
+            0.8527
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.1562,
+            0.2533,
+            0.9042
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.843,
+            0.6961,
+            0.4872
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.2271,
+            0.1303,
+            0.6767
+          ]
+        },
+        {
+          "element": "Ga",
+          "coords": [
+            0.7819,
+            0.4576,
+            0.5217
+          ]
+        },
+        {
+          "element": "Ga",
           "coords": [
             0.8344,
-            0.3543,
-            0.2383
+            0.5615,
+            0.3095
           ]
         },
         {
-          "element": "Fe",
+          "element": "N",
           "coords": [
-            0.8426,
-            0.9424,
-            0.9979
+            0.4963,
+            0.5856,
+            0.6822
           ]
         },
         {
-          "element": "Fe",
+          "element": "N",
           "coords": [
-            0.1505,
-            0.0191,
-            0.84
+            0.0276,
+            0.3833,
+            0.2191
           ]
         },
         {
-          "element": "Fe",
+          "element": "N",
           "coords": [
-            0.4279,
-            0.0163,
-            0.06
+            0.5555,
+            0.671,
+            0.4472
           ]
         },
         {
-          "element": "Fe",
+          "element": "N",
           "coords": [
-            0.6685,
-            0.1457,
-            0.1369
+            0.1383,
+            0.6673,
+            0.5175
           ]
         },
         {
-          "element": "Fe",
+          "element": "N",
           "coords": [
-            0.0702,
-            0.4335,
-            0.895
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.308,
-            0.2457,
-            0.8455
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.1172,
-            0.5316,
-            0.3162
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.789,
-            0.5837,
-            0.4033
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.2781,
-            0.5516,
-            0.5701
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.5936,
-            0.6959,
-            0.6778
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.6997,
-            0.2102,
-            0.4752
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.2878,
-            0.0618,
-            0.5647
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.6418,
-            0.8165,
-            0.173
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.0512,
-            0.7304,
-            0.882
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.775,
-            0.6158,
-            0.8876
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.9199,
-            0.0489,
-            0.2825
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.423,
-            0.8024,
-            0.8734
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.3306,
-            0.3296,
-            0.1403
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.99,
-            0.0362,
-            0.576
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.3564,
-            0.3072,
-            0.4579
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.7731,
-            0.9035,
-            0.7292
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.8985,
-            0.6647,
-            0.1247
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.5368,
-            0.4931,
-            0.3473
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.8381,
-            0.1871,
-            0.7155
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.5591,
-            0.4197,
-            0.6854
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.4458,
-            0.0888,
-            0.3173
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.092,
-            0.2322,
-            0.3986
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.9721,
-            0.6912,
-            0.6015
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.8648,
-            0.2624,
-            0.9574
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.2646,
-            0.8107,
-            0.6497
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.5383,
-            0.0797,
-            0.677
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.5749,
-            0.4591,
-            0.9977
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.0281,
-            0.3926,
-            0.6192
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.3415,
-            0.5181,
-            0.8355
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.3962,
-            0.6435,
-            0.1345
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.1763,
-            0.8452,
-            0.1211
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.1558,
-            0.8943,
-            0.4163
-          ]
-        },
-        {
-          "element": "Fe",
-          "coords": [
-            0.5068,
-            0.7916,
+            0.0696,
+            0.2717,
             0.4182
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.7183,
-            0.4145,
-            0.3886
+            0.1857,
+            0.3865,
+            0.9998
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.9191,
-            0.5409,
-            0.5361
+            0.0395,
+            0.5537,
+            0.7322
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.7293,
-            0.3394,
-            0.0641
+            0.7097,
+            0.4534,
+            0.3736
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.2571,
-            0.3779,
-            0.9634
+            0.4457,
+            0.9938,
+            0.3914
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.0977,
-            0.9614,
-            0.2452
+            0.5851,
+            0.5457,
+            0.1674
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.555,
-            0.936,
-            0.2774
+            0.7806,
+            0.5325,
+            0.7773
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.6512,
-            0.9827,
-            0.0409
+            0.575,
+            0.3441,
+            0.7884
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.937,
-            0.335,
-            0.7935
+            0.5547,
+            0.9749,
+            0.1875
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.4465,
-            0.4474,
-            0.5241
+            0.738,
+            0.195,
+            0.9584
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.1523,
-            0.717,
-            0.5263
+            0.4178,
+            0.1577,
+            0.0351
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.395,
-            0.6492,
-            0.6897
+            0.4857,
+            0.9331,
+            0.1384
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.9626,
-            0.027,
-            0.7784
+            0.623,
+            0.9685,
+            0.8836
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.5171,
-            0.683,
-            0.2626
+            0.9366,
+            0.9803,
+            0.2704
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.9662,
-            0.2451,
-            0.5494
+            0.2629,
+            0.7332,
+            0.7536
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.649,
-            0.2403,
-            0.669
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2142,
-            0.6498,
-            0.1953
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4377,
-            0.6129,
-            0.9597
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7662,
-            0.1692,
-            0.3
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7352,
-            0.7268,
-            0.0295
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.5701,
-            0.8777,
-            0.7472
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.237,
-            0.0881,
-            0.9855
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3769,
-            0.8369,
-            0.0593
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.893,
-            0.743,
-            0.7567
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.7873,
-            0.032,
-            0.5785
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.9358,
-            0.5131,
-            0.2557
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.4834,
-            0.1499,
-            0.4881
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.2763,
-            0.2244,
-            0.3166
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.6529,
-            0.6718,
-            0.5049
-          ]
-        },
-        {
-          "element": "O",
-          "coords": [
-            0.3525,
             0.9037,
-            0.4845
+            0.4553,
+            0.9672
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.325,
-            0.1134,
-            0.7306
+            0.3538,
+            0.6966,
+            0.0627
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.0004,
-            0.8129,
-            0.0428
+            0.3266,
+            0.6026,
+            0.0801
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.4653,
-            0.4574,
-            0.1792
+            0.4017,
+            0.7422,
+            0.2944
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.962,
-            0.5686,
-            0.9739
+            0.9888,
+            0.2744,
+            0.8382
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.6504,
-            0.5184,
-            0.8039
+            0.2254,
+            0.9225,
+            0.2504
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.8026,
-            0.7399,
-            0.2679
+            0.2958,
+            0.1987,
+            0.8082
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.9101,
-            0.099,
-            0.0662
+            0.6477,
+            0.1854,
+            0.4573
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.1715,
-            0.4094,
-            0.467
+            0.6074,
+            0.9521,
+            0.5944
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.1695,
-            0.4465,
-            0.7197
+            0.1692,
+            0.898,
+            0.3236
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.2158,
-            0.8243,
-            0.8281
+            0.9926,
+            0.8388,
+            0.9169
           ]
         },
         {
-          "element": "O",
+          "element": "N",
           "coords": [
-            0.4643,
-            0.1743,
-            0.1267
+            0.9636,
+            0.0613,
+            0.333
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.9078,
+            0.1988,
+            0.1243
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3698,
+            0.9568,
+            0.4447
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.8715,
+            0.783,
+            0.6197
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3472,
+            0.9816,
+            0.7015
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.0861,
+            0.0388,
+            0.7481
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.5913,
+            0.6437,
+            0.1678
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.9865,
+            0.782,
+            0.8452
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.9829,
+            0.4838,
+            0.2247
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.8149,
+            0.9388,
+            0.0747
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.78,
+            0.1168,
+            0.711
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.4121,
+            0.5693,
+            0.6137
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.6356,
+            0.7003,
+            0.4956
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.2422,
+            0.9704,
+            0.9555
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.728,
+            0.7111,
+            0.9664
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3387,
+            0.2362,
+            0.4057
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.4726,
+            0.235,
+            0.0581
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.5455,
+            0.0561,
+            0.8402
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.3413,
+            0.6696,
+            0.3256
+          ]
+        },
+        {
+          "element": "N",
+          "coords": [
+            0.8608,
+            0.7097,
+            0.2132
+          ]
+        }
+      ]
+    },
+    "e99f6b0f-a632-4015-af78-92409e9fcf10": {
+      "id": "e99f6b0f-a632-4015-af78-92409e9fcf10",
+      "reduced_formula": "NaCl",
+      "full_formula": "Na6 Cl6",
+      "space_group_symbol": "Pm-3m",
+      "space_group_number": 221,
+      "num_sites": 12,
+      "is_ordered": true,
+      "density": 0.7764,
+      "html_file": "7748218a3f5f4b3a913d57a39221dbda.html",
+      "lattice": {
+        "a": 30.0,
+        "b": 5.0,
+        "c": 5.0,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 750.0
+      },
+      "sites": [
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.1667,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.3333,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.6667,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.8333,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.0833,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.4167,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.5833,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.9167,
+            0.5,
+            0.5
+          ]
+        }
+      ]
+    },
+    "84957077-9df2-464c-9e96-5e32a4d668da": {
+      "id": "84957077-9df2-464c-9e96-5e32a4d668da",
+      "reduced_formula": "NaCl",
+      "full_formula": "Na8 Cl8",
+      "space_group_symbol": "Pm-3m",
+      "space_group_number": 221,
+      "num_sites": 16,
+      "is_ordered": true,
+      "density": 0.7764,
+      "html_file": "2b847f49927941269176cbee5683a761.html",
+      "lattice": {
+        "a": 10.0,
+        "b": 10.0,
+        "c": 10.0,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 1000.0
+      },
+      "sites": [
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.0,
+            0.5
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.5,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.0,
+            0.5
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.5,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.25,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.25,
+            0.75
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.75,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.75,
+            0.75
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.25,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.25,
+            0.75
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.75,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.75,
+            0.75
+          ]
+        }
+      ]
+    },
+    "7eadea48-2ff5-47b8-b03f-c42afcaa2ee7": {
+      "id": "7eadea48-2ff5-47b8-b03f-c42afcaa2ee7",
+      "reduced_formula": "NaCl",
+      "full_formula": "Na8 Cl8",
+      "space_group_symbol": "Pm-3m",
+      "space_group_number": 221,
+      "num_sites": 16,
+      "is_ordered": true,
+      "density": 0.7764,
+      "html_file": "0973bb914baa4f49982db34461522f88.html",
+      "lattice": {
+        "a": 10.0,
+        "b": 10.0,
+        "c": 10.0,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 1000.0
+      },
+      "sites": [
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.0,
+            0.5
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.5,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.0,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.0,
+            0.5
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.5,
+            0.0
+          ]
+        },
+        {
+          "element": "Na",
+          "coords": [
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.25,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.25,
+            0.75
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.75,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.25,
+            0.75,
+            0.75
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.25,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.25,
+            0.75
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.75,
+            0.25
+          ]
+        },
+        {
+          "element": "Cl",
+          "coords": [
+            0.75,
+            0.75,
+            0.75
+          ]
+        }
+      ]
+    },
+    "154690dc-b749-45cf-a5e0-39d93a0f4cd3": {
+      "id": "154690dc-b749-45cf-a5e0-39d93a0f4cd3",
+      "reduced_formula": "Ag3AuSeS",
+      "full_formula": "Ag24 Au8 Se8 S8",
+      "space_group_symbol": "I2_13",
+      "space_group_number": 199,
+      "num_sites": 48,
+      "is_ordered": true,
+      "density": 8.3795,
+      "html_file": "5db619b0ea1342d1b511be3c25296cc5.html",
+      "lattice": {
+        "a": 10.0043,
+        "b": 10.0043,
+        "c": 10.0043,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 90.0,
+        "volume": 1001.29
+      },
+      "sites": [
+        {
+          "element": "Ag",
+          "coords": [
+            0.387,
+            -0.0,
+            0.25
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.113,
+            -0.0,
+            0.75
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.3782,
+            0.5,
+            0.75
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.1218,
+            0.5,
+            0.25
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.0,
+            0.75,
+            0.113
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.0,
+            0.25,
+            0.387
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.5,
+            0.25,
+            0.1218
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.5,
+            0.75,
+            0.3782
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.25,
+            0.387,
+            -0.0
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.75,
+            0.113,
+            -0.0
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.75,
+            0.3782,
+            0.5
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.25,
+            0.1218,
+            0.5
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.887,
+            0.5,
+            0.75
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.613,
+            0.5,
+            0.25
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.8782,
+            -0.0,
+            0.25
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.6218,
+            -0.0,
+            0.75
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.5,
+            0.25,
+            0.613
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.5,
+            0.75,
+            0.887
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.0,
+            0.75,
+            0.6218
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.0,
+            0.25,
+            0.8782
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.75,
+            0.887,
+            0.5
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.25,
+            0.613,
+            0.5
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.25,
+            0.8782,
+            -0.0
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.75,
+            0.6218,
+            -0.0
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.1238,
+            0.1238,
+            0.1238
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.1238,
+            0.8762,
+            0.3762
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.3762,
+            0.1238,
+            0.8762
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.8762,
+            0.3762,
+            0.1238
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.6238,
+            0.6238,
+            0.6238
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.6238,
+            0.3762,
+            0.8762
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.8762,
+            0.6238,
+            0.3762
+          ]
+        },
+        {
+          "element": "Au",
+          "coords": [
+            0.3762,
+            0.8762,
+            0.6238
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.2676,
+            0.2676,
+            0.2676
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.7676,
+            0.2324,
+            0.7324
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.7324,
+            0.7676,
+            0.2324
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.2324,
+            0.7324,
+            0.7676
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.7676,
+            0.7676,
+            0.7676
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.2676,
+            0.7324,
+            0.2324
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.2324,
+            0.2676,
+            0.7324
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.7324,
+            0.2324,
+            0.2676
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.9865,
+            0.0135,
+            0.5135
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.4865,
+            0.4865,
+            0.4865
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.5135,
+            0.9865,
+            0.0135
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.0135,
+            0.5135,
+            0.9865
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.4865,
+            0.5135,
+            0.0135
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.9865,
+            0.9865,
+            0.9865
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.0135,
+            0.4865,
+            0.5135
+          ]
+        },
+        {
+          "element": "S",
+          "coords": [
+            0.5135,
+            0.0135,
+            0.4865
           ]
         }
       ]
     }
   },
   "queue": [
-    "2bab9596-1964-465a-bca9-d4936e0d35c6",
-    "3156b056-e303-4dbd-9efa-406bf58760ba",
-    "2213d881-6278-4183-8568-e1ff3fe23084",
-    "9d663ee0-444d-43f8-b0d1-e113e14bf971",
-    "2e77387a-4309-49a4-8d21-560cae4d908e",
-    "cd2937e2-e5e7-408d-b5fb-921d97cdde5a",
-    "78360943-5372-4a78-98f7-18b09f655256",
-    "a8b30b0b-ba87-438f-a272-ab3f7e636986",
-    "e019b8de-a3d5-4f46-83fa-87bad5f3ddb2",
-    "977a5508-d165-40d7-a109-b1f7501b4fe8"
+    "ae1732ba-620a-45cb-be4e-e1c83552c2eb",
+    "21625391-4f26-4e4c-a681-71b8525b247b",
+    "4091bd36-b906-40b4-8e40-9008ec3c8e5f",
+    "30ba4a8a-b072-419c-beb5-a61daefb785a",
+    "c2e371f0-c457-450c-98bc-6a41240534dd",
+    "183550c9-11bc-4315-ae37-175e45351ff2",
+    "e99f6b0f-a632-4015-af78-92409e9fcf10",
+    "84957077-9df2-464c-9e96-5e32a4d668da",
+    "7eadea48-2ff5-47b8-b03f-c42afcaa2ee7",
+    "154690dc-b749-45cf-a5e0-39d93a0f4cd3"
   ]
 }
