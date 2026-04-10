@@ -245,7 +245,7 @@ def get_structure_plot(structure: Structure,
                     fontsize=14, fontweight='bold')
         
         img_buffer = io.BytesIO()
-        plt.savefig(img_buffer, format='png', dpi=200, bbox_inches='tight')
+        plt.savefig(img_buffer, format='png', dpi=100, bbox_inches='tight')
         plt.close(fig)
         
         return {"Image": get_plot_url(img_buffer), "error": None}
