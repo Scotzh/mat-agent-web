@@ -17,7 +17,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -784,6 +784,25 @@ async def predict_bandgap(formula: str):
     """预测材料带隙"""
     try:
         result = await invoke_mcp_tool_direct("predict_band_gap", {"formula": formula})
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========== ALIGNN 多性质预测 API ==========
+
+@app.post("/predict_alignn")
+async def predict_alignn(
+    cif_path: str = Body(..., description="本地CIF文件路径"),
+    properties: List[str] = Body(None, description="要预测的性质列表"),
+    keep_temp_files: bool = Body(False, description="是否保留临时文件")
+):
+    """使用 ALIGNN 进行多性质预测"""
+    try:
+        params = {"cif_path": cif_path, "keep_temp_files": keep_temp_files}
+        if properties is not None:
+            params["properties"] = properties
+        result = await invoke_mcp_tool_direct("predict_with_alignn", params)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

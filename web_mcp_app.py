@@ -464,6 +464,13 @@ def predict_bandgap(formula: str) -> dict:
     """预测带隙"""
     return call_mcp_api("/predict_bandgap", params={"formula": formula})
 
+def predict_with_alignn(cif_path: str, properties: list = None, keep_temp_files: bool = False) -> dict:
+    """使用 ALIGNN 进行多性质预测"""
+    json_data = {"cif_path": cif_path, "keep_temp_files": keep_temp_files}
+    if properties is not None:
+        json_data["properties"] = properties
+    return call_mcp_api("/predict_alignn", method="POST", json_data=json_data)
+
 def search_materials(elements: str = None, exclude: str = None, formula: str = None, chunk_size: int = 10) -> dict:
     """搜索材料"""
     params = {"chunk_size": chunk_size}
@@ -1539,55 +1546,172 @@ def ml_prediction_page():
         st.warning("⚠️ MCP 服务未连接")
         return
     
-    col1, col2 = st.columns([1, 2])
+    # 使用标签页区分两种预测方式
+    tabs = st.tabs(["🔮 快速带隙预测", "🚀 ALIGNN 多性质预测"])
     
-    with col1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("**🔮 带隙预测**")
+    # ========== 标签页 1: 快速带隙预测 ==========
+    with tabs[0]:
+        col1, col2 = st.columns([1, 2])
         
-        formula = st.text_input("化学式", placeholder="例如: SiO2, LiFePO4")
-        
-        if st.button("开始预测", type="primary", use_container_width=True):
-            if not formula:
-                st.warning("请输入化学式")
-            else:
-                with st.spinner("预测中..."):
-                    result = predict_bandgap(formula)
-                    
-                    if "error" in result:
-                        st.error(result["error"])
-                    else:
-                        st.session_state.prediction_result = result
-                        st.success("预测完成!")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("**📊 预测结果**")
-        
-        if "prediction_result" in st.session_state:
-            result = st.session_state.prediction_result
-            # 解析 ML 预测结果
-            try:
-                # 使用统一解析函数处理结果（使用默认key="result"）
-                parsed = parse_mcp_result(result)
-                
-                if isinstance(parsed, dict) and "predicted_band_gap" in parsed:
-                    gap = parsed["predicted_band_gap"]
-                    if isinstance(gap, list) and len(gap) > 0:
-                        st.metric("预测带隙", f"{gap[0]:.4f} eV")
-                    else:
-                        st.metric("预测带隙", f"{gap} eV")
+        with col1:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.markdown("**🔮 带隙预测**")
+            
+            formula = st.text_input("化学式", placeholder="例如: SiO2, LiFePO4", key="bg_formula")
+            
+            if st.button("开始预测", type="primary", use_container_width=True, key="bg_predict_btn"):
+                if not formula:
+                    st.warning("请输入化学式")
                 else:
-                    st.json(parsed)
-            except Exception as e:
-                st.error(f"解析预测结果失败: {e}")
-                st.json(result)
-        else:
-            st.info("请输入化学式并点击预测")
+                    with st.spinner("预测中..."):
+                        result = predict_bandgap(formula)
+                        
+                        if "error" in result:
+                            st.error(result["error"])
+                        else:
+                            st.session_state.prediction_result = result
+                            st.success("预测完成!")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)
+        with col2:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.markdown("**📊 预测结果**")
+            
+            if "prediction_result" in st.session_state:
+                result = st.session_state.prediction_result
+                try:
+                    parsed = parse_mcp_result(result)
+                    
+                    if isinstance(parsed, dict) and "predicted_band_gap" in parsed:
+                        gap = parsed["predicted_band_gap"]
+                        if isinstance(gap, list) and len(gap) > 0:
+                            st.metric("预测带隙", f"{gap[0]:.4f} eV")
+                        else:
+                            st.metric("预测带隙", f"{gap} eV")
+                    else:
+                        st.json(parsed)
+                except Exception as e:
+                    st.error(f"解析预测结果失败: {e}")
+                    st.json(result)
+            else:
+                st.info("请输入化学式并点击预测")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ========== 标签页 2: ALIGNN 多性质预测 ==========
+    with tabs[1]:
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.markdown("**🚀 ALIGNN 多性质预测**")
+            st.caption("上传CIF文件，使用ALIGNN模型预测多种材料性质")
+            
+            # CIF文件路径输入
+            cif_path = st.text_input(
+                "CIF文件路径",
+                placeholder="例如: cifs/Sr(ZnGe)2-mp-7363.cif",
+                key="alignn_cif_path"
+            )
+            
+            # 可选择预测的性质
+            available_properties = {
+                "form_en": "形成能",
+                "gap_vdw": "带隙 (vdW)",
+                "gap_mbj": "带隙 (MBJ)",
+                "ehull": "凸包能",
+                "elec_mass": "电子有效质量",
+                "hole_mass": "空穴有效质量",
+                "bulk_mod": "体弹模量",
+                "shear_mod": "剪切模量",
+                "tot_en": "总能"
+            }
+            
+            # 默认选择常用性质
+            default_props = ["gap_mbj", "ehull", "bulk_mod", "tot_en"]
+            selected_props = st.multiselect(
+                "选择要预测的性质",
+                options=list(available_properties.keys()),
+                default=default_props,
+                format_func=lambda x: f"{x} - {available_properties[x]}",
+                key="alignn_props"
+            )
+            
+            # 高级选项
+            with st.expander("高级选项"):
+                keep_temp = st.checkbox("保留远程临时文件", value=False, key="alignn_keep_temp")
+            
+            if st.button("开始预测", type="primary", use_container_width=True, key="alignn_predict_btn"):
+                if not cif_path:
+                    st.warning("请输入CIF文件路径")
+                elif not selected_props:
+                    st.warning("请至少选择一项要预测的性质")
+                else:
+                    with st.spinner("正在上传CIF并运行ALIGNN预测，这可能需要几分钟..."):
+                        result = predict_with_alignn(cif_path, selected_props, keep_temp)
+                        
+                        if "error" in result:
+                            st.error(f"预测失败: {result['error']}")
+                        else:
+                            st.session_state.alignn_result = result
+                            st.success("预测完成!")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.markdown("**📊 ALIGNN 预测结果**")
+            
+            if "alignn_result" in st.session_state:
+                result = st.session_state.alignn_result
+                try:
+                    parsed = parse_mcp_result(result)
+                    
+                    if isinstance(parsed, dict):
+                        if parsed.get("success"):
+                            predictions = parsed.get("predictions", {})
+                            
+                            if predictions:
+                                # 显示预测结果表格
+                                st.markdown("**预测性质**")
+                                
+                                for prop_key, prop_data in predictions.items():
+                                    if isinstance(prop_data, dict):
+                                        value = prop_data.get("value", "N/A")
+                                        unit = prop_data.get("unit", "")
+                                        desc = prop_data.get("description", prop_key)
+                                        
+                                        col_val, col_unit = st.columns([2, 1])
+                                        with col_val:
+                                            st.metric(desc, f"{value}")
+                                        with col_unit:
+                                            st.caption(unit)
+                                    else:
+                                        st.metric(prop_key, str(prop_data))
+                                
+                                # 显示原始输出（可折叠）
+                                with st.expander("查看原始输出"):
+                                    if parsed.get("raw_stdout"):
+                                        st.text("标准输出:")
+                                        st.code(parsed["raw_stdout"])
+                                    if parsed.get("raw_stderr"):
+                                        st.text("标准错误:")
+                                        st.code(parsed["raw_stderr"])
+                            else:
+                                st.info("没有预测结果")
+                        else:
+                            st.error(f"预测失败: {parsed.get('error', '未知错误')}")
+                            st.json(parsed)
+                    else:
+                        st.json(parsed)
+                except Exception as e:
+                    st.error(f"解析预测结果失败: {e}")
+                    st.json(result)
+            else:
+                st.info("请输入CIF路径并点击预测")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
 
 def vasp_task_page():
     st.markdown('<h1 class="main-title">💻 VASP 任务管理</h1>', unsafe_allow_html=True)
