@@ -6,8 +6,7 @@ from pymatgen.io import vasp
 from typing import Dict, List, Optional, Union
 from loadenv import Config
 import re
-import numpy as np
-from config import 
+import numpy as np 
 BASE_DIR = Config().get_base_dir()
 class VaspTaskInitializer:
     def __init__(self, hostname, username, password=None, port=22, key_filename=None):
