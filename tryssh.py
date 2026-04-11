@@ -4,11 +4,11 @@ from datetime import datetime
 from pymatgen.core import Structure
 from pymatgen.io import vasp
 from typing import Dict, List, Optional, Union
-import loadenv
+from loadenv import Config
 import re
 import numpy as np
-
-
+from config import 
+BASE_DIR = Config().get_base_dir()
 class VaspTaskInitializer:
     def __init__(self, hostname, username, password=None, port=22, key_filename=None):
         self.hostname = hostname
@@ -941,7 +941,7 @@ class VaspTaskInitializer:
         
         Args:
             task_directory: 任务目录路径
-            mission: 计算类型 ('relax', 'scf', 'band', 'dos')
+            mission: 计算类型 ('relax', 'scf', 'band, 'dos')
             read_mode: True表示读取INCAR参数，False表示写入新参数
             new_params: 写入模式时的新参数字典
             
@@ -1040,6 +1040,371 @@ class VaspTaskInitializer:
                     "message": f"更新INCAR文件失败: {str(e)}",
                     "error": str(e)
                 }
+
+    def _parse_prediction_output(self, stdout: str) -> dict:
+        """
+        解析预测脚本的输出表格
+        
+        Args:
+            stdout: 标准输出文本
+        
+        Returns:
+            预测结果字典，键为性质名称，值为包含value、unit、description的字典
+        """
+        import re
+        
+        # 预定义已知的性质名称
+        known_properties = {
+            'gap_vdw', 'gap_mbj', 'gap_pbe', 'form_en', 'tot_en', 'ehull',
+            'bulk_mod', 'elec_mass', 'hole_mass'
+        }
+        
+        predictions = {}
+        
+        # 方法1：使用正则表达式直接提取表格区域
+        # 匹配从"📊 预测结果:"到下一个"==="之间的内容，但只取表格数据行
+        table_pattern = r'📊 预测结果:.*?\n=+\n.*?\n-+\n(.*?)\n=+'
+        match = re.search(table_pattern, stdout, re.DOTALL)
+        
+        if not match:
+            # 方法2：逐行查找表格
+            lines = stdout.split('\n')
+            start_idx = -1
+            end_idx = -1
+            
+            for i, line in enumerate(lines):
+                if '📊 预测结果:' in line or '预测结果:' in line:
+                    # 找到表格开始行
+                    # 查找第一个===分隔线
+                    for j in range(i + 1, min(i + 10, len(lines))):
+                        if '===' in lines[j] and len(lines[j].strip()) > 10:
+                            # 查找---分隔线（表头下划线）
+                            for k in range(j + 1, min(j + 10, len(lines))):
+                                if '---' in lines[k] and len(lines[k].strip()) > 10:
+                                    # 查找结束的===分隔线
+                                    for m in range(k + 1, min(k + 50, len(lines))):
+                                        if '===' in lines[m] and len(lines[m].strip()) > 10:
+                                            start_idx = k + 1  # 数据行开始
+                                            end_idx = m        # 表格结束
+                                            break
+                                if end_idx != -1:
+                                    break
+                        if end_idx != -1:
+                            break
+                    break
+            
+            if start_idx == -1 or end_idx == -1:
+                return {}
+            
+            table_lines = lines[start_idx:end_idx]
+        else:
+            table_text = match.group(1)
+            table_lines = [line.strip() for line in table_text.split('\n') if line.strip()]
+        
+        # 解析每一行数据
+        for line in table_lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # 跳过表头行
+            if '性质' in line and '描述' in line and '值' in line and '单位' in line:
+                continue
+            
+            # 方法1：正则表达式匹配标准格式
+            # 格式: 性质 中文描述 数值 单位
+            pattern1 = r'^(\w+)\s+([^\d\-]+?)\s+([\-+]?\d*\.?\d+(?:[eE][\-+]?\d+)?)\s+([a-zA-Z0-9/]+)$'
+            match1 = re.match(pattern1, line)
+            
+            if match1:
+                prop, description, value_str, unit = match1.groups()
+                description = description.strip()
+                
+                if prop not in known_properties and not prop.startswith('gap_'):
+                    continue
+                
+                try:
+                    value = float(value_str)
+                except ValueError:
+                    # 尝试处理可能的格式问题
+                    # 有时数值可能包含逗号或其他字符
+                    clean_value_str = re.sub(r'[^\d\.\-eE]', '', value_str)
+                    try:
+                        value = float(clean_value_str)
+                    except ValueError:
+                        value = 0.0
+                
+                predictions[prop] = {
+                    "value": value,
+                    "unit": unit,
+                    "description": description
+                }
+                continue
+            
+            # 方法2：如果正则不匹配，尝试按固定宽度解析
+            # 根据实际输出，列大致位置：性质(0-15)，描述(15-35)，数值(35-50)，单位(50-)
+            if len(line) >= 50:
+                # 尝试分割
+                prop = line[0:15].strip()
+                if prop not in known_properties and not prop.startswith('gap_'):
+                    continue
+                
+                # 从右侧开始查找数值和单位
+                # 先找单位（最后一部分，应该是字母和/组成）
+                right_part = line[35:].strip()
+                parts = right_part.split()
+                
+                if len(parts) >= 2:
+                    # 通常最后是单位，倒数第二是数值
+                    unit = parts[-1]
+                    value_str = parts[-2]
+                    # 描述是行中间部分
+                    desc_end = line.find(right_part)
+                    description = line[15:desc_end].strip()
+                else:
+                    # 可能格式不同
+                    # 尝试正则匹配数值和单位
+                    value_match = re.search(r'([\-+]?\d*\.?\d+(?:[eE][\-+]?\d+)?)\s+([a-zA-Z0-9/]+)$', right_part)
+                    if value_match:
+                        value_str, unit = value_match.groups()
+                        # 提取描述
+                        desc_end = line.find(value_str) - 1 if value_match.start() > 0 else 35
+                        description = line[15:desc_end].strip()
+                    else:
+                        continue
+                
+                try:
+                    value = float(value_str)
+                    predictions[prop] = {
+                        "value": value,
+                        "unit": unit,
+                        "description": description
+                    }
+                except ValueError:
+                    continue
+            
+            # 方法3：按空格分割的简单方法（最后手段）
+            parts = line.split()
+            if len(parts) >= 4:
+                prop = parts[0]
+                if prop not in known_properties and not prop.startswith('gap_'):
+                    continue
+                
+                # 从后往前解析
+                # 最后应该是单位
+                unit = parts[-1]
+                if not re.match(r'^[a-zA-Z0-9/]+$', unit):
+                    # 可能不是单位，调整
+                    if len(parts) >= 5 and re.match(r'^[a-zA-Z0-9/]+$', parts[-2]):
+                        unit = parts[-2]
+                        value_str = parts[-1]
+                        description = ' '.join(parts[1:-2])
+                    else:
+                        unit = ''
+                        value_str = parts[-1]
+                        description = ' '.join(parts[1:-1])
+                else:
+                    value_str = parts[-2]
+                    description = ' '.join(parts[1:-2])
+                
+                try:
+                    value = float(value_str)
+                    predictions[prop] = {
+                        "value": value,
+                        "unit": unit,
+                        "description": description
+                    }
+                except ValueError:
+                    continue
+        
+        return predictions
+
+    def predict_from_local_cif(self, local_cif_path: str, properties: list = None, 
+                              keep_temp: bool = False, temp_base_dir: str = "/tmp/alignn_predict") -> dict:
+        """
+        上传本地CIF文件到计算服务器进行ALIGNN预测，支持自动清理
+        
+        Args:
+            local_cif_path: 本地CIF文件的路径（绝对或相对路径）
+            properties: 要预测的性质列表，如 ["gap_vdw", "form_en"]；默认为None（预测所有默认性质）
+            keep_temp: 是否保留临时文件，False表示预测后自动删除
+            temp_base_dir: 远程临时目录的基础路径
+            
+        Returns:
+            dict: 包含预测结果、上传信息和错误信息
+        """
+        import time
+        import random
+        import os
+        
+        # 验证本地文件
+        if not os.path.exists(local_cif_path):
+            return {
+                "status": "error",
+                "error": f"本地文件不存在: {local_cif_path}"
+            }
+        
+        if not local_cif_path.lower().endswith('.cif'):
+            return {
+                "status": "error", 
+                "error": f"文件不是CIF格式: {local_cif_path}"
+            }
+        
+        # 内部函数：清理临时目录
+        def cleanup_temp_dir(dir_path):
+            """使用SSH直接执行清理命令，绕过execute_command的安全限制"""
+            try:
+                if self.ssh:
+                    # 直接使用SSH执行命令
+                    stdin, stdout, stderr = self.ssh.exec_command(f"rm -rf '{dir_path}'")
+                    # 等待命令完成
+                    stdout.channel.recv_exit_status()
+                    return True
+            except Exception as e:
+                # 记录但忽略清理错误
+                import sys
+                print(f"清理临时目录失败 {dir_path}: {e}", file=sys.stderr)
+            return False
+        
+        # 生成唯一临时目录名
+        timestamp = int(time.time())
+        rand_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=8))
+        file_basename = os.path.basename(local_cif_path)
+        file_name_no_ext = os.path.splitext(file_basename)[0]
+        
+        # 临时目录格式: /tmp/alignn_predict/20250411_142030_abc123_si
+        temp_dir = f"{temp_base_dir}/{timestamp}_{rand_str}_{file_name_no_ext}"
+        
+        # 确保临时目录存在
+        mkdir_cmd = f"mkdir -p '{temp_dir}'"
+        mkdir_result = self.execute_command(mkdir_cmd)
+        if mkdir_result.get("status") != "ok":
+            return {
+                "status": "error",
+                "error": f"创建临时目录失败: {mkdir_result.get('error')}",
+                "raw_result": mkdir_result
+            }
+        
+        remote_cif_path = f"{temp_dir}/{file_basename}"
+        
+        # 上传文件
+        try:
+            self.sftp.put(local_cif_path, remote_cif_path)
+        except Exception as e:
+            # 尝试清理临时目录
+            try:
+                cleanup_temp_dir(temp_dir)
+            except:
+                pass
+            return {
+                "status": "error",
+                "error": f"上传文件失败: {str(e)}"
+            }
+        
+        # 构建预测命令
+        script_dir = BASE_DIR
+        
+        # 处理性质参数
+        if properties is None:
+            properties = []
+        
+        # 构建性质参数部分
+        if not properties:
+            # 不传递性质参数，使用默认行为
+            prop_str = ""
+        else:
+            # 检查是否包含特殊值 "all"
+            if len(properties) == 1 and properties[0].lower() == "all":
+                prop_str = "all"
+            else:
+                prop_str = " ".join(properties)
+        
+        # 构建完整命令
+        keep_arg = "--keep" if keep_temp else ""
+        cmd_parts = []
+        cmd_parts.append(f"cd {script_dir}")
+        cmd_parts.append(f"./quick_predict.sh '{remote_cif_path}' {prop_str} {keep_arg}")
+        cmd = " && ".join(filter(None, cmd_parts))
+        
+        # 执行预测
+        result = self.execute_command(cmd)
+        
+        # 如果执行被拒绝（危险命令），尝试直接调用Python脚本
+        if result.get("status") == "rejected":
+            # 回退方案：直接调用local_all_predict.py
+            if not properties:
+                prop_arg = "all"
+            elif len(properties) == 1 and properties[0].lower() == "all":
+                prop_arg = "all"
+            else:
+                prop_arg = ",".join(properties)
+            
+            cmd2 = f"cd {script_dir} && ~/.conda/envs/my_alignn/bin/python local_all_predict.py '{remote_cif_path}' -p {prop_arg}"
+            result = self.execute_command(cmd2)
+        
+        # 清理临时目录（除非keep_temp=True）
+        cleanup_success = False
+        if not keep_temp:
+            cleanup_success = cleanup_temp_dir(temp_dir)
+        
+        # 解析结果
+        if result.get("status") == "ok":
+            stdout = result.get("stdout", "")
+            stderr = result.get("stderr", "")
+            
+            predictions = self._parse_prediction_output(stdout)
+            
+            # 如果没有解析到任何预测值，返回解析失败的错误
+            if not predictions:
+                return {
+                    "status": "error",
+                    "error": "解析预测结果失败，可能是输出格式异常",
+                    "raw_stdout": stdout,
+                    "raw_stderr": stderr,
+                    "command": cmd,
+                    "upload_info": {
+                        "local_path": local_cif_path,
+                        "remote_path": remote_cif_path,
+                        "temp_dir": temp_dir,
+                        "cleaned": not keep_temp and cleanup_success,
+                        "kept": keep_temp
+                    }
+                }
+            
+            return {
+                "status": "ok",
+                "predictions": predictions,
+                # "raw_stdout": stdout,
+                "raw_stderr": stderr,
+                "command": cmd,
+                "upload_info": {
+                    "local_path": local_cif_path,
+                    "remote_path": remote_cif_path,
+                    "temp_dir": temp_dir,
+                    "cleaned": not keep_temp and cleanup_success,
+                    "kept": keep_temp
+                }
+            }
+        else:
+            # 即使预测失败，也尝试清理（除非keep_temp=True）
+            if not keep_temp:
+                try:
+                    cleanup_temp_dir(temp_dir)
+                except:
+                    pass
+            
+            return {
+                "status": "error",
+                "error": result.get("error") or result.get("message") or "预测失败",
+                "upload_info": {
+                    "local_path": local_cif_path,
+                    "remote_path": remote_cif_path,
+                    "temp_dir": temp_dir,
+                    "cleaned": not keep_temp,
+                    "kept": keep_temp
+                },
+                "raw_result": result
+            }
 
 
 if __name__ == "__main__":

@@ -18,3 +18,4 @@ instance/
 .codebuddy/
 structure_info.json
 matagent_server_history.db
+structure_info.json
