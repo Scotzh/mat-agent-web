@@ -267,14 +267,14 @@ def check_mcp_server() -> bool:
         pass
     return False
 
-def call_mcp_api(endpoint: str, method: str = "GET", params: dict = None, json_data: dict = None) -> dict:
+def call_mcp_api(endpoint: str, method: str = "GET", params: dict = None, json_data: dict = None, timeout: int = 300) -> dict:
     """调用 MCP Agent Server API"""
     url = f"{MCP_AGENT_URL}{endpoint}"
     try:
         if method == "GET":
-            response = requests.get(url, params=params, timeout=30)
+            response = requests.get(url, params=params, timeout=timeout)
         else:
-            response = requests.post(url, params=params, json=json_data, timeout=30)
+            response = requests.post(url, params=params, json=json_data, timeout=timeout)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -1624,7 +1624,6 @@ def ml_prediction_page():
                 "elec_mass": "电子有效质量",
                 "hole_mass": "空穴有效质量",
                 "bulk_mod": "体弹模量",
-                "shear_mod": "剪切模量",
                 "tot_en": "总能"
             }
             
