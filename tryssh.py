@@ -1055,7 +1055,9 @@ class VaspTaskInitializer:
         # 预定义已知的性质名称
         known_properties = {
             'gap_vdw', 'gap_mbj', 'gap_pbe', 'form_en', 'tot_en', 'ehull',
-            'bulk_mod', 'elec_mass', 'hole_mass'
+            'bulk_mod', 'elec_mass', 'hole_mass',
+            'n_seebeck', 'p_seebeck', 'shear_mod', 'encut', 'magmom',
+            'piezo_max', 'dielectric_max'
         }
         
         predictions = {}
@@ -1112,7 +1114,7 @@ class VaspTaskInitializer:
             
             # 方法1：正则表达式匹配标准格式
             # 格式: 性质 中文描述 数值 单位
-            pattern1 = r'^(\w+)\s+([^\d\-]+?)\s+([\-+]?\d*\.?\d+(?:[eE][\-+]?\d+)?)\s+([a-zA-Z0-9/]+)$'
+            pattern1 = r'^(\w+)\s+([^\d\-]+?)\s+([\-+]?\d*\.?\d+(?:[eE][\-+]?\d+)?)\s+([^\s]+)$'
             match1 = re.match(pattern1, line)
             
             if match1:
@@ -1163,7 +1165,7 @@ class VaspTaskInitializer:
                 else:
                     # 可能格式不同
                     # 尝试正则匹配数值和单位
-                    value_match = re.search(r'([\-+]?\d*\.?\d+(?:[eE][\-+]?\d+)?)\s+([a-zA-Z0-9/]+)$', right_part)
+                    value_match = re.search(r'([\-+]?\d*\.?\d+(?:[eE][\-+]?\d+)?)\s+([^\s]+)$', right_part)
                     if value_match:
                         value_str, unit = value_match.groups()
                         # 提取描述
@@ -1192,9 +1194,9 @@ class VaspTaskInitializer:
                 # 从后往前解析
                 # 最后应该是单位
                 unit = parts[-1]
-                if not re.match(r'^[a-zA-Z0-9/]+$', unit):
+                if not re.match(r'^[^\s]+$', unit):
                     # 可能不是单位，调整
-                    if len(parts) >= 5 and re.match(r'^[a-zA-Z0-9/]+$', parts[-2]):
+                    if len(parts) >= 5 and re.match(r'^[^\s]+$', parts[-2]):
                         unit = parts[-2]
                         value_str = parts[-1]
                         description = ' '.join(parts[1:-2])

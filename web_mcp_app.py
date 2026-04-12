@@ -1624,7 +1624,14 @@ def ml_prediction_page():
                 "elec_mass": "电子有效质量",
                 "hole_mass": "空穴有效质量",
                 "bulk_mod": "体弹模量",
-                "tot_en": "总能"
+                "shear_mod": "剪切模量",
+                "tot_en": "总能",
+                "n_seebeck": "Seebeck系数 (n型)",
+                "p_seebeck": "Seebeck系数 (p型)",
+                "encut": "截断能",
+                "magmom": "磁矩",
+                "piezo_max": "最大压电系数",
+                "dielectric_max": "最大介电常数"
             }
             
             # 默认选择常用性质

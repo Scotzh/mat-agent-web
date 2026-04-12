@@ -1587,7 +1587,7 @@ async def predict_with_alignn(
     keep_temp_files: bool = False
 ) -> dict:
     """
-    上传本地CIF文件到计算服务器进行ALIGNN机器学习预测
+    上传本地CIF文件到计算服务器进行ALIGNN机器学习预测(预测时间较长，建议一次预测1~3个)
     
     Args:
         cif_path: 本地CIF文件路径（将自动上传到计算服务器）
@@ -1598,7 +1598,14 @@ async def predict_with_alignn(
     'gap_mbj',
     'hole_mass',
     'bulk_mod',
-    'tot_en']
+    'tot_en',
+    'n_seebeck',
+    'p_seebeck',
+    'shear_mod',
+    'encut',
+    'magmom',
+    'piezo_max',
+    'dielectric_max']
                    None表示使用默认性质
                    ["all"]表示预测所有可用性质
         keep_temp_files: 是否保留远程临时文件（用于调试）
@@ -1624,7 +1631,7 @@ async def predict_with_alignn(
                     "returns": {
                         "success": True,
                         "predictions": result.get("predictions", {}),
-                        "raw_stdout": result.get("raw_stdout", ""),
+                        # "raw_stdout": result.get("raw_stdout", ""),
                         "raw_stderr": result.get("raw_stderr", ""),
                         "command": result.get("command", ""),
                         "upload_info": result.get("upload_info", {})

@@ -315,10 +315,136 @@
           ]
         }
       ]
+    },
+    "ac3e0c0d-cb9a-42a7-9ad9-3c506b3e444b": {
+      "id": "ac3e0c0d-cb9a-42a7-9ad9-3c506b3e444b",
+      "reduced_formula": "Ag2PbSe2",
+      "full_formula": "Ag2 Pb1 Se2",
+      "space_group_symbol": "P-3m1",
+      "space_group_number": 164,
+      "num_sites": 5,
+      "is_ordered": true,
+      "density": 7.7831,
+      "html_file": "acbe23c144e0406480cca07bb165e62d.html",
+      "lattice": {
+        "a": 4.4205,
+        "b": 4.4205,
+        "c": 7.3229,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 120.0,
+        "volume": 123.93
+      },
+      "sites": [
+        {
+          "element": "Ag",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.3846
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.6154
+          ]
+        },
+        {
+          "element": "Pb",
+          "coords": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.2372
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.7628
+          ]
+        }
+      ]
+    },
+    "217a8b4f-1a75-4b26-91fd-9141cb256708": {
+      "id": "217a8b4f-1a75-4b26-91fd-9141cb256708",
+      "reduced_formula": "Ag2PbSe2",
+      "full_formula": "Ag2 Pb1 Se2",
+      "space_group_symbol": "P-3m1",
+      "space_group_number": 164,
+      "num_sites": 5,
+      "is_ordered": true,
+      "density": 7.7831,
+      "html_file": "7896745a8143446e9a840511df1d1713.html",
+      "lattice": {
+        "a": 4.4205,
+        "b": 4.4205,
+        "c": 7.3229,
+        "alpha": 90.0,
+        "beta": 90.0,
+        "gamma": 120.0,
+        "volume": 123.93
+      },
+      "sites": [
+        {
+          "element": "Ag",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.3846
+          ]
+        },
+        {
+          "element": "Ag",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.6154
+          ]
+        },
+        {
+          "element": "Pb",
+          "coords": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.3333,
+            0.6667,
+            0.2372
+          ]
+        },
+        {
+          "element": "Se",
+          "coords": [
+            0.6667,
+            0.3333,
+            0.7628
+          ]
+        }
+      ]
     }
   },
   "queue": [
     "83ae685d-e84e-496d-84b1-95e1180f12de",
-    "f912f19c-fd41-4b39-b24c-72763a3a2560"
+    "f912f19c-fd41-4b39-b24c-72763a3a2560",
+    "ac3e0c0d-cb9a-42a7-9ad9-3c506b3e444b",
+    "217a8b4f-1a75-4b26-91fd-9141cb256708"
   ]
 }

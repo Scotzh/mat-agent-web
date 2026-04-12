@@ -75,7 +75,7 @@ def search_oqmd(
             "status": "error"
         }
 
-def safe_get(url, retries=5, delay=5, timeout=100):
+def safe_get(url, retries=3, delay=5, timeout=100):
     """安全的HTTP GET请求，包含重试机制"""
     for i in range(retries):
         try:
