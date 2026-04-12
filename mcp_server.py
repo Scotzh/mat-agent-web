@@ -1564,7 +1564,7 @@ def extract_result(task_directory: str, mission: str, plot: bool = True) -> dict
 @mcp.tool()
 async def predict_band_gap(formula: str | list[str]) -> dict:
     """
-    使用预训练模型快速预测指定材料的带隙值(基于HSE06泛函数据，不适用于金属体系)，只需化学式
+    使用预训练XGBoost模型快速预测指定材料的带隙值(基于SNUMAT的HSE06泛函带隙，不适用于金属体系)，只需化学式
     
     Args:
         formula: 化学式，可以是单个字符串如 "LiFeO2" 或列表如 ["LiFeO2", "NaCl"]
