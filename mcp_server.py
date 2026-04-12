@@ -1596,6 +1596,7 @@ async def predict_with_alignn(
     'elec_mass',
     'ehull',
     'gap_mbj',
+    'gap_pbe',
     'hole_mass',
     'bulk_mod',
     'tot_en',
@@ -1605,7 +1606,8 @@ async def predict_with_alignn(
     'encut',
     'magmom',
     'piezo_max',
-    'dielectric_max']
+    'dielectric_max',
+    'mp_e_form']
                    None表示使用默认性质
                    ["all"]表示预测所有可用性质
         keep_temp_files: 是否保留远程临时文件（用于调试）

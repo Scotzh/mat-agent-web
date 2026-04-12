@@ -1615,23 +1615,25 @@ def ml_prediction_page():
                 key="alignn_cif_path"
             )
             
-            # 可选择预测的性质
+            # 可选择预测的性质 (18种)
             available_properties = {
                 "form_en": "形成能",
-                "gap_vdw": "带隙 (vdW)",
-                "gap_mbj": "带隙 (MBJ)",
+                "gap_vdw": "带隙 (vdW泛函)",
+                "gap_mbj": "带隙 (MBJ泛函)",
+                "gap_pbe": "带隙 (PBE泛函)",
                 "ehull": "凸包能",
                 "elec_mass": "电子有效质量",
                 "hole_mass": "空穴有效质量",
                 "bulk_mod": "体弹模量",
                 "shear_mod": "剪切模量",
                 "tot_en": "总能",
-                "n_seebeck": "Seebeck系数 (n型)",
-                "p_seebeck": "Seebeck系数 (p型)",
+                "mp_e_form": "形成能 (MP)",
+                "n_seebeck": "n型塞贝克系数",
+                "p_seebeck": "p型塞贝克系数",
                 "encut": "截断能",
                 "magmom": "磁矩",
-                "piezo_max": "最大压电系数",
-                "dielectric_max": "最大介电常数"
+                "piezo_max": "压电张量最大分量",
+                "dielectric_max": "介电常数最大值"
             }
             
             # 默认选择常用性质

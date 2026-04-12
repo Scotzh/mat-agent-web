@@ -1057,7 +1057,7 @@ class VaspTaskInitializer:
             'gap_vdw', 'gap_mbj', 'gap_pbe', 'form_en', 'tot_en', 'ehull',
             'bulk_mod', 'elec_mass', 'hole_mass',
             'n_seebeck', 'p_seebeck', 'shear_mod', 'encut', 'magmom',
-            'piezo_max', 'dielectric_max'
+            'piezo_max', 'dielectric_max', 'mp_e_form'
         }
         
         predictions = {}
