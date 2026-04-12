@@ -280,15 +280,15 @@ def check_mcp_server() -> bool:
 
 
 def call_mcp_api(
-    endpoint: str, method: str = "GET", params: dict = None, json_data: dict = None
+    endpoint: str, method: str = "GET", params: dict = None, json_data: dict = None, timeout: int = 360
 ) -> dict:
     """调用 MCP Agent Server API"""
     url = f"{MCP_AGENT_URL}{endpoint}"
     try:
         if method == "GET":
-            response = requests.get(url, params=params, timeout=30)
+            response = requests.get(url, params=params, timeout=timeout)
         else:
-            response = requests.post(url, params=params, json=json_data, timeout=30)
+            response = requests.post(url, params=params, json=json_data, timeout=timeout)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -485,7 +485,7 @@ def add_chat_message_via_api(
 def predict_bandgap(formula: str) -> dict:
     """预测带隙"""
     return call_mcp_api("/predict_bandgap", params={"formula": formula})
-    
+
 def predict_with_alignn(cif_path: str, properties: list = None, keep_temp_files: bool = False) -> dict:
     """使用 ALIGNN 进行多性质预测"""
     json_data = {"cif_path": cif_path, "keep_temp_files": keep_temp_files}
