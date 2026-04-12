@@ -21,3 +21,4 @@ matagent_server_history.db
 db/
 cache/
 server/
+.env
