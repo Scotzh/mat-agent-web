@@ -3,10 +3,13 @@
 ## 快速启动
 
 ```bash
-# 启动 Flask 文件服务器（2D/3D 可视化）
+# 1. 启动 Flask 文件服务器（2D/3D 可视化，端口 6750）
 python flask_server.py
 
-# 启动 Web 界面
+# 2. 启动 Agent Server（端口 8766）
+uv run --env-file config/.env python agent_mcp_server.py
+
+# 3. 启动 Web 界面（端口 8501）
 streamlit run web_mcp_app.py
 ```
 
@@ -81,12 +84,25 @@ python agent_mcp_server.py
 
 ## 依赖管理
 
-项目使用 `uv` 管理依赖：
 ```bash
-uv sync          # 同步依赖
-uv pip install -r requirements.txt  # 备用
+uv sync                    # 同步依赖
+uv pip install -r config/requirements.txt  # 备用
 ```
-Python 版本: **3.13.4** (pyproject.toml 要求)
+Python 版本: **3.13.4**
+
+## 系统架构
+
+```
+用户层 (Streamlit 8501) 
+    ↓ HTTP/REST
+服务层 (Agent Server 8766) ← FastAPI，会话管理，SQLite
+    ↓ MCP Protocol
+工具层 (MCP Server 8000) ← FastMCP，20+ 工具函数
+    ↓
+外部服务: Materials Project API, OQMD, ML模型, SSH/VASP
+```
+
+**核心流程**: Web界面 → Agent Server → MCP Server → 各工具/外部服务
 
 ## 目录结构
 
@@ -95,10 +111,12 @@ mat-agent-web/
 ├── web_mcp_app.py              # Streamlit Web 应用 (端口 8501)
 ├── agent_mcp_server.py         # FastAPI Agent 服务 (端口 8766)
 ├── mcp_server.py               # MCP 工具服务器 (端口 8000)
+├── flask_server.py             # 2D/3D 可视化文件服务 (端口 6750)
+├── tryssh.py                   # SSH 远程连接，VASP 任务管理
 ├── oqmd.py                     # OQMD 数据库查询
 ├── agent/
 │   └── langchain_mcp_agent.py  # LangChain MCP Agent 核心
-├── myml/                       # 机器学习模型
+├── myml/                       # ML预测模型 (XGBoost)
 ├── config/                     # 配置文件
 │   ├── loadenv.py
 │   ├── pyproject.toml
@@ -106,13 +124,10 @@ mat-agent-web/
 ├── db/                        # 数据库
 │   ├── databasemanage.py
 │   └── *.db
-├── cache/                     # 缓存/输出
-│   ├── temp_images/
-│   ├── temp_3d/
+├── cache/                      # 缓存目录
+│   ├── temp_images/           # 2D 结构图
+│   ├── temp_3d/               # 3D HTML
 │   └── structure_info.json
-├── server/                    # 后端服务
-│   ├── flask_server.py
-│   └── tryssh.py
 └── web/
     └── assets/               # Web 静态资源
 ```
@@ -135,3 +150,4 @@ mat-agent-web/
 
 - 详细文档: `README.md`
 - MCP 工具说明: `README.md` (搜索 "MCP Server")
+- 软著说明: `软著说明书生成流程.md`
