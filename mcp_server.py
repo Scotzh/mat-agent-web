@@ -1940,6 +1940,83 @@ async def predict_band_gap(formula: str | list[str]) -> dict:
             "args": args,
             "returns": {"error": str(e), "message": f"预测材料 {formula} 的带隙值失败"},
         }
+@mcp.tool()
+async def predict_with_alignn(
+    cif_path: str, 
+    properties: List[str] = None,
+    keep_temp_files: bool = False
+) -> dict:
+    """
+    上传本地CIF文件到计算服务器进行ALIGNN机器学习预测(预测时间较长，建议一次预测1~3个)
+    
+    Args:
+        cif_path: 本地CIF文件路径（将自动上传到计算服务器）
+        properties: 要预测的性质列表，如 ['form_en',
+    'gap_vdw',
+    'elec_mass',
+    'ehull',
+    'gap_mbj',
+    'hole_mass',
+    'bulk_mod',
+    'tot_en',
+    'n_seebeck',
+    'p_seebeck',
+    'shear_mod',
+    'encut',
+    'magmom',
+    'piezo_max',
+    'dielectric_max']
+                   None表示使用默认性质
+                   ["all"]表示预测所有可用性质
+        keep_temp_files: 是否保留远程临时文件（用于调试）
+    
+    Returns:
+        标准MCP格式: {"args": dict, "returns": dict}
+    """
+    args = {"cif_path": cif_path, "keep_temp_files": keep_temp_files}
+    if properties is not None:
+        args["properties"] = properties
+    
+    try:
+        with connection as vasp_task:
+            result = vasp_task.predict_from_local_cif(
+                local_cif_path=cif_path,
+                properties=properties,
+                keep_temp=keep_temp_files
+            )
+            
+            if result.get("status") == "ok":
+                return {
+                    "args": args,
+                    "returns": {
+                        "success": True,
+                        "predictions": result.get("predictions", {}),
+                        # "raw_stdout": result.get("raw_stdout", ""),
+                        "raw_stderr": result.get("raw_stderr", ""),
+                        "command": result.get("command", ""),
+                        "upload_info": result.get("upload_info", {})
+                    }
+                }
+            else:
+                return {
+                    "args": args,
+                    "returns": {
+                        "success": False,
+                        "error": result.get("error", "预测失败"),
+                        "upload_info": result.get("upload_info", {}),
+                        "raw_result": result
+                    }
+                }
+    except Exception as e:
+        return {
+            "args": args,
+            "returns": {
+                "success": False,
+                "error": str(e),
+                "message": "调用本地CIF预测工具失败"
+            }
+        }
+
 
 
 # ============ 主程序入口 ============
