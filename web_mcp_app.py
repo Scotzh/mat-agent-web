@@ -485,7 +485,13 @@ def add_chat_message_via_api(
 def predict_bandgap(formula: str) -> dict:
     """预测带隙"""
     return call_mcp_api("/predict_bandgap", params={"formula": formula})
-
+    
+def predict_with_alignn(cif_path: str, properties: list = None, keep_temp_files: bool = False) -> dict:
+    """使用 ALIGNN 进行多性质预测"""
+    json_data = {"cif_path": cif_path, "keep_temp_files": keep_temp_files}
+    if properties is not None:
+        json_data["properties"] = properties
+    return call_mcp_api("/predict_alignn", method="POST", json_data=json_data)
 
 def search_materials(
     elements: str = None, exclude: str = None, formula: str = None, chunk_size: int = 10
