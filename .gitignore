@@ -18,7 +18,6 @@ instance/
 .codebuddy/
 structure_info.json
 matagent_server_history.db
-db/
 cache/
 server/
 .env
@@ -27,3 +26,6 @@ MatAgent材料科学智能设计平台说明书.docx
 node_modules
 package-lock.json
 package.json
+db/matagent_history.db 
+db/matagent.db
+
