@@ -28,4 +28,5 @@ package-lock.json
 package.json
 db/matagent_history.db 
 db/matagent.db
+AGENTS.md
 
