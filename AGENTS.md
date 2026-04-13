@@ -116,7 +116,11 @@ mat-agent-web/
 ├── oqmd.py                     # OQMD 数据库查询
 ├── agent/
 │   └── langchain_mcp_agent.py  # LangChain MCP Agent 核心
-├── myml/                       # ML预测模型 (XGBoost)
+├── myml/                       # ML预测模型
+│   ├── bandgap_predict.py     # XGBoost 带隙预测
+│   ├── featurizer.py          # 特征工程工具
+│   ├── xgb_model.json         # XGBoost 训练模型
+│   └── *.csv                  # 元素特征数据集
 ├── config/                     # 配置文件
 │   ├── loadenv.py
 │   ├── pyproject.toml

@@ -22,3 +22,8 @@ db/
 cache/
 server/
 .env
+.ruff_cache/
+MatAgent材料科学智能设计平台说明书.docx
+node_modules
+package-lock.json
+package.json

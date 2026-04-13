@@ -298,18 +298,6 @@ def calc_column_fractions_df(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop(columns=['normalized_formula'], errors='ignore')
 
 
-
-def calc_orbital(df: pd.DataFrame) -> pd.DataFrame:
-    newdf = df.copy()
-    newdf['normalized_formula'] = newdf['formula'].apply(normalize_formula)
-    from myml import atomic_orbital_calc
-    newdf['obidata'] = newdf['normalized_formula'].apply(lambda x: atomic_orbital_calc.ImprovedMolecularOrbitals(x).get_data()) 
-    newdf['HOMO'] = newdf['obidata'].apply(lambda x: x['HOMO'])
-    newdf['LUMO'] = newdf['obidata'].apply(lambda x: x['LUMO'])
-    newdf['gap'] = newdf['obidata'].apply(lambda x: x['gap'])
-    return newdf.drop(columns=['normalized_formula', 'obidata'], errors='ignore')
-
-
 def my_featurizer(df: pd.DataFrame) -> pd.DataFrame:
     new_df = df.copy()
     from pymatgen.core.composition import Composition
@@ -368,7 +356,6 @@ def my_featurizer(df: pd.DataFrame) -> pd.DataFrame:
     new_df["composition"] = new_df["formula"].apply(new_formula)
     new_df = Stoichiometry().featurize_dataframe(new_df, 'composition',ignore_errors=True)
     new_df = AtomicPackingEfficiency().featurize_dataframe(new_df, 'composition',ignore_errors=True)
-    new_df = calc_orbital(new_df)
     new_df = get_all_features(new_df, drops=drops)
     new_df.rename(columns={'dist from 1 clusters |APE| < 0.010': 'APE_close_to_1'}, inplace = True)
     new_df.rename(columns={'dist from 3 clusters |APE| < 0.010': 'APE_close_to_3'}, inplace = True)
