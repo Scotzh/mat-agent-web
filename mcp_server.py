@@ -1992,7 +1992,7 @@ async def predict_with_alignn(
                     "returns": {
                         "success": True,
                         "predictions": result.get("predictions", {}),
-                        # "raw_stdout": result.get("raw_stdout", ""),
+                        "raw_stdout": result.get("raw_stdout", ""),
                         "raw_stderr": result.get("raw_stderr", ""),
                         "command": result.get("command", ""),
                         "upload_info": result.get("upload_info", {})

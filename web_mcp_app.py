@@ -927,7 +927,7 @@ def display_tool_result(tr: dict):
             if html_url:
                 st.markdown(f"**🌐 3D 可视化:** [点击查看]({html_url})")
                 if html_url.startswith("/"):
-                    html_url = f"http://127.0.0.1:5001{html_url}"
+                    html_url = f"http://127.0.0.1:6750{html_url}"
                 st.components.v1.iframe(html_url, height=400, scrolling=True)
 
             # CIF 文件下载
@@ -1533,7 +1533,7 @@ def material_search_page():
                                     url_3d = result_data["3d_image_url"]
                                     # 确保URL是完整的
                                     if url_3d.startswith("/"):
-                                        url_3d = f"http://127.0.0.1:5001{url_3d}"
+                                        url_3d = f"http://127.0.0.1:6750{url_3d}"
                                     st.markdown(f"[在浏览器中打开3D结构]({url_3d})")
                                     # 使用iframe嵌入3D视图
                                     st.components.v1.iframe(
@@ -1743,7 +1743,7 @@ def structure_builder_page():
                     url_3d = parsed["3d_image_url"]
                     # 确保URL是完整的
                     if url_3d.startswith("/"):
-                        url_3d = f"http://127.0.0.1:5001{url_3d}"
+                        url_3d = f"http://127.0.0.1:6750{url_3d}"
                     st.markdown(f"[在浏览器中打开3D结构]({url_3d})")
                     # 使用iframe嵌入3D视图
                     st.components.v1.iframe(url_3d, height=500, scrolling=True)
