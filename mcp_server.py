@@ -51,7 +51,8 @@ from ase.build import bulk
 # ============ 本地模块导入 ============
 from config import loadenv
 from db import databasemanage
-from server import tryssh, flask_server
+from server import tryssh
+import flask_server
 import oqmd
 
 # ============ 全局配置 ============
